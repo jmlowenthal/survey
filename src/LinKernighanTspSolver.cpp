@@ -196,6 +196,8 @@ std::vector<int> Tour::apply_changes(const std::vector<int>& ts, const int k) {
     }
     while (current != 0);
 
+    delete edges;
+
     return tour;
 
 }
