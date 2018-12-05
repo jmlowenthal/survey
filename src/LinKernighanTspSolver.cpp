@@ -46,6 +46,12 @@ private:
      */
     bool is_positive_gain(const std::vector<int>& ts, int i);
 
+    /**
+     * Checks that a new y edge will not get the algorithm stuck.
+     * @param ts Proposed changes.
+     * @param i New vertex.
+     * @return Returns false if the vertex will cause LKH to get stuck.
+     */
     bool is_deadend(const std::vector<int>& ts, int i);
     
 public:
