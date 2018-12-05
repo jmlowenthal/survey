@@ -155,9 +155,9 @@ void Tour::begin(int t1, int t2, int t3) {
 
 std::vector<int> Tour::apply_changes(const std::vector<int>& ts, const int k) {
     int n = _points.size();
-    int *edges = new int[3 * n]; // [..., count, nghbr1, nghbr2, ...] 
+    std::vector<int> edges(3 * n); // [..., count, nghbr1, nghbr2, ...] 
     for (int i = 0; i < n; ++i) {
-        int *I = edges + i * 3;
+        int *I = &edges[i * 3];
         I[0] = 2; // count
         I[1] = (i + n - 1) % n; // neighbour A
         I[2] = (i + 1) % n; // neighbour B
@@ -167,10 +167,10 @@ std::vector<int> Tour::apply_changes(const std::vector<int>& ts, const int k) {
     for (int i = 0; i < k; i += 2) {
         int a = ts[i];
         int b = ts[(i + 1) % k];
-        int *A = edges + a * 3;
+        int *A = &edges[a * 3];
         A[0] = 1;
         A[1] = A[1] != b ? A[1] : A[2]; // pop
-        int *B = edges + b * 3;
+        int *B = &edges[b * 3];
         B[0] = 1;
         B[1] = B[1] != a ? B[1] : B[2]; // pop
     }
@@ -189,22 +189,22 @@ std::vector<int> Tour::apply_changes(const std::vector<int>& ts, const int k) {
     std::vector<int> tour;
     tour.reserve(_points.size());
     int current = 0;
-    do {
+    for (int step = 0; step < _points.size() + 1; ++step) {
         tour.push_back(current);
-        int* C = edges + current * 3;
+        int* C = &edges[current * 3];
         assert(C[0] > 0);
         int next = C[C[0]];
         --C[0];
-        int* N = edges + next * 3;
+        int* N = &edges[next * 3];
         --N[0];
         if (N[0] > 0 && N[1] == current) {
             N[1] = N[2];
         }
         current = next;
+        if (current == 0) {
+            break;
+        }
     }
-    while (current != 0);
-
-    delete edges;
 
     return tour;
 
@@ -234,20 +234,29 @@ int Tour::get_next_ti(const std::vector<int>& ts) {
 }
 
 bool Tour::test_next(const std::vector<int>& ts, const int ti) {
-    std::vector<int> tour(ts);
-    tour.push_back(ti);
-    // tour.push_back(tour[0]);
-    std::vector<int> points = apply_changes(tour, tour.size());
+    for (int i = 0; i < ts.size(); ++i) {
+        if (ts[i] == ti) {
+            return false;
+        }
+    }
+    std::vector<int> changes(ts);
+    changes.push_back(ti);
+    std::vector<int> points = apply_changes(changes, changes.size());
     if (points.size() != _points.size()) {
+        std::cout << "p.size != _p.size => test_next = false" << std::endl;
         return false;
     }
     for (int i = 0; i < points.size(); ++i) {
         for (int j = i + 1; j < points.size(); ++j) {
             if (points[i] == points[j]) {
+                std::cout << "p[" << i << "] == "
+                    << "p[" << j << "]"
+                    << " => test_next = false" << std::endl;
                 return false;
             }
         }
     }
+    std::cout << "test_next = true" << std::endl;
     return true;
 }
 
