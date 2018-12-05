@@ -46,6 +46,12 @@ private:
      */
     bool is_positive_gain(const std::vector<int>& ts, int i);
 
+    /**
+     * Checks that a new y edge will not get the algorithm stuck.
+     * @param ts Proposed changes.
+     * @param i New vertex.
+     * @return Returns false if the vertex will cause LKH to get stuck.
+     */
     bool is_deadend(const std::vector<int>& ts, int i);
     
 public:
@@ -85,7 +91,7 @@ void Tour::improve() {
         int t3 = get_nearest_neighbour(t2);
         float d2_3 = distance(t2, t3);
         float d1_2 = distance(t1, t2);
-        if (t3 < 0 || d2_3 > d1_2) {
+        if (t3 < 0 || d2_3 >= d1_2) {
             t2 = ((t1 + n - 1) % n);
             t3 = get_nearest_neighbour(t2);
         }
@@ -94,9 +100,9 @@ void Tour::improve() {
 }
 
 int Tour::get_nearest_neighbour(int t) {
-    int bi = (t == 0 ? 1 : 0);
-    float bd = distance(t, bi);
-    for (int i = bi + 1; i < _points.size(); ++i) {
+    int bi = -1;
+    float bd = __FLT_MAX__;
+    for (int i = 0; i < _points.size(); ++i) {
         if (i != t) {
             float d = distance(t, i);
             if (d < bd) {
@@ -116,8 +122,8 @@ void Tour::begin(int t1, int t2, int t3) {
     float initial_gain = distance(t1, t2) - distance(t2, t3);
     float g_star = 0;
     float gi = initial_gain;
-    int k = 3;
-    for (int i = 4;; i += 2) {
+    int k = 2;
+    for (int i = 3;; i += 2) {
 
         int ti = get_next_ti(ts);
         if (ti < 0) {
@@ -190,8 +196,10 @@ std::vector<int> Tour::apply_changes(const std::vector<int>& ts, const int k) {
         int next = C[C[0]];
         --C[0];
         int* N = edges + next * 3;
-        N[0] = 1;
-        N[1] = N[1] != current ? N[1] : N[2];
+        --N[0];
+        if (N[0] > 0 && N[1] == current) {
+            N[1] = N[2];
+        }
         current = next;
     }
     while (current != 0);
@@ -228,7 +236,7 @@ int Tour::get_next_ti(const std::vector<int>& ts) {
 bool Tour::test_next(const std::vector<int>& ts, const int ti) {
     std::vector<int> tour(ts);
     tour.push_back(ti);
-    tour.push_back(tour[0]);
+    // tour.push_back(tour[0]);
     std::vector<int> points = apply_changes(tour, tour.size());
     if (points.size() != _points.size()) {
         return false;
@@ -293,7 +301,6 @@ bool Tour::is_positive_gain(const std::vector<int>& ts, const int i) {
 
 bool Tour::is_deadend(const std::vector<int>& ts, const int i) {
     int n = _points.size();
-    return is_disjunctive(ts, i, (i + 1) % n)
-        || is_disjunctive(ts, i, (i + n - 1) % n);
-}    return !is_disjunctive(ts, i, (i + 1) % n)
+    return !is_disjunctive(ts, i, (i + 1) % n)
         && !is_disjunctive(ts, i, (i + n - 1) % n);
+}
