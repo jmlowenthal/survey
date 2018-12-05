@@ -46,12 +46,6 @@ private:
      */
     bool is_positive_gain(const std::vector<int>& ts, int i);
 
-    /**
-     * Checks that a new y edge will not get the algorithm stuck.
-     * @param ts Proposed changes.
-     * @param i New vertex.
-     * @return Returns false if the vertex will cause LKH to get stuck.
-     */
     bool is_deadend(const std::vector<int>& ts, int i);
     
 public:
@@ -299,4 +293,5 @@ bool Tour::is_deadend(const std::vector<int>& ts, const int i) {
     int n = _points.size();
     return is_disjunctive(ts, i, (i + 1) % n)
         || is_disjunctive(ts, i, (i + n - 1) % n);
-}
+}    return !is_disjunctive(ts, i, (i + 1) % n)
+        && !is_disjunctive(ts, i, (i + n - 1) % n);
