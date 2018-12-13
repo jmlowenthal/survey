@@ -2,7 +2,7 @@
 #include "SymmetricPairwiseMatrix.h"
 #include <algorithm>
 #include <cmath>
-#include <cassert>
+#include <boost/assert.hpp>
 
 #define ANT_COUNT 16
 
@@ -87,7 +87,7 @@ void ACS::iterate(int ant_count, float beta, float q0, float p, float a) {
             float q = ((float)rand()) / __INT_MAX__;
             int j;
             if (q <= q0) {
-                assert(best >= 0 && best < _points.size());
+                BOOST_ASSERT(best >= 0 && best < _points.size());
                 j = best;
             }
             else {
@@ -97,7 +97,7 @@ void ACS::iterate(int ant_count, float beta, float q0, float p, float a) {
                     choice -= prob[j];
                     ++j;
                 }
-                assert(j < _points.size());
+                BOOST_ASSERT(j < _points.size());
             }
             ant.push_back(j);
 
