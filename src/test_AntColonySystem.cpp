@@ -1,8 +1,8 @@
 #include "catch.hpp"
-#include "LinKernighanTspSolver.h"
+#include "AntColonySystem.h"
 #include "TourMatcher.h"
 
-TEST_CASE("Simple linear 4-node graph", "[full]") {
+TEST_CASE("[ACS] Simple linear 4-node graph", "[full]") {
     std::vector<Position2D> points = {
         Position2D(3, 0),
         Position2D(0, 0),
@@ -15,12 +15,12 @@ TEST_CASE("Simple linear 4-node graph", "[full]") {
         Position2D(2, 0),
         Position2D(3, 0),
     };
-    LinKernighanTspSolver solver;
+    AntColonySystem solver;
     std::vector<Position2D> solution = solver.solve(points);
     REQUIRE_THAT(solution, TourEqual(desired));
 }
 
-TEST_CASE("Circular graph", "[full]") {
+TEST_CASE("[ACS] Circular graph", "[full]") {
     const int N = 8;
     std::vector<Position2D> points;
     std::vector<Position2D> desired;
@@ -35,7 +35,7 @@ TEST_CASE("Circular graph", "[full]") {
             float theta = ((float)order[i]) / ((float) N);
             points.push_back(Position2D(cosf(theta), sinf(theta)));
         }
-        LinKernighanTspSolver solver;
+        AntColonySystem solver;
         std::vector<Position2D> solution = solver.solve(points);
         REQUIRE_THAT(solution, TourEqual(desired));
     }
@@ -46,7 +46,7 @@ TEST_CASE("Circular graph", "[full]") {
             float theta = ((float)order[i]) / ((float) N);
             points.push_back(Position2D(cosf(theta), sinf(theta)));
         }
-        LinKernighanTspSolver solver;
+        AntColonySystem solver;
         std::vector<Position2D> solution = solver.solve(points);
         REQUIRE_THAT(solution, TourEqual(desired));
     }

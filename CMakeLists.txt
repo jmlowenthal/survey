@@ -32,9 +32,10 @@ add_executable(
     ${CORE_SRC}
     src/TourMatcher.cpp
     src/test_main.cpp
-    src/test_LinKernighanTspSolver.cpp
+    src/test_AntColonySystem.cpp
     src/test_TourMatcher.cpp
     src/test_Position2D.cpp
+    src/test_SymmetricPairwiseMatrix.cpp
 )
 
 set(CMAKE_MODULE_PATH lib/catch2/cmake/)
