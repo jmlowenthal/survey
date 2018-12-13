@@ -18,7 +18,7 @@ include_directories(include/ lib/catch2/include/)
 set(Boost_USE_STATIC_LIBS OFF)
 set(Boost_USE_MULTITHREADED ON)
 set(Boost_USE_STATIC_RUNTIME OFF)
-find_package(Boost REQUIRED COMPONENTS system)
+find_package(Boost REQUIRED COMPONENTS system graph)
 include_directories(${Boost_INCLUDE_DIRS})
 add_definitions(-DBOOST_ENABLE_ASSERT_DEBUG_HANDLER)
 
@@ -26,7 +26,6 @@ set(
     CORE_SRC
     src/Position2D.cpp
     src/RandomTspSolver.cpp
-    src/NearestNeighbourTspSolver.cpp
     src/AntColonySystemTspSolver.cpp
     src/assert.cpp
 )
