@@ -16,6 +16,8 @@ private:
 
     std::vector<int> _best_tour;
 
+    float _tau_zero;
+
     float distance(const int i, const int j) const;
 
     float tour_distance(const std::vector<int>& tour) const;
@@ -41,7 +43,11 @@ std::vector<Position2D> AntColonySystem::solve(
 }
 
 ACS::ACS(const std::vector<Position2D>& points) : _points(points), _pheromone(points.size(), 0.0f) {
-    
+    float len = 0.0f;
+    for (int i = 0; i < points.size() - 1; ++i) {
+        len += Position2D::distance(points[i], points[i + 1]);
+    }
+    _tau_zero = 1.0f / (len * points.size());
 }
 
 float ACS::distance(const int i, const int j) const {
@@ -102,7 +108,7 @@ void ACS::iterate(int ant_count, float beta, float q0, float p, float a) {
             ant.push_back(j);
 
             // Local updating rule
-            _pheromone.at(current, j) = (1.0f - p) * _pheromone.at(current, j);// + p * initial_pheromone
+            _pheromone.at(current, j) = (1.0f - p) * _pheromone.at(current, j) + p * _tau_zero;
 
         }
     }
