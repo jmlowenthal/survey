@@ -39,13 +39,13 @@ SymmetricPairwiseMatrix<T>::SymmetricPairwiseMatrix(int n, T initial) : _n(n), _
 
 template<typename T>
 T& SymmetricPairwiseMatrix<T>::at(int i, int j) {
-    if (i >= _n || j >= _n) {
+    if (i < 0 || i >= _n || j < 0 || j >= _n) {
         throw std::invalid_argument("2D indices are out of range");
     }
     int a = std::min(i, j);
     int b = std::max(i, j);
     int index = a * (2 * _n - (a - 1)) / 2 + (b - a);
-    BOOST_ASSERT(index < _data.size());
+    BOOST_ASSERT(index < _data.size() && index >= 0);
     return _data[index];
 }
 

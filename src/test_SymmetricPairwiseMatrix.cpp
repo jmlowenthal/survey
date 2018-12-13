@@ -11,3 +11,11 @@ TEST_CASE("[SymmetricPairwiseMatrix] Simple operation") {
         }
     }
 }
+
+TEST_CASE("[SymmetricPairwiseMatrix] Out of bounds") {
+    SymmetricPairwiseMatrix<float> mat(10);
+    REQUIRE_THROWS(mat.at(10, 0));
+    REQUIRE_THROWS(mat.at(0, 10));
+    REQUIRE_THROWS(mat.at(-1, -1));
+    REQUIRE_THROWS(mat.at(1, 10));
+}
