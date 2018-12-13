@@ -1,4 +1,4 @@
-#include "AntColonySystem.h"
+#include "AntColonySystemTspSolver.h"
 #include "SymmetricPairwiseMatrix.h"
 #include <algorithm>
 #include <cmath>
@@ -32,7 +32,7 @@ public:
 
 };
 
-std::vector<Position2D> AntColonySystem::solve(
+std::vector<Position2D> AntColonySystemTspSolver::solve(
     const std::vector<Position2D>& points
 ) {
     ACS acs(points);

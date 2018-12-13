@@ -1,9 +1,9 @@
-#ifndef ANTCOLONYSYSTEM_H
-#define ANTCOLONYSYSTEM_H
+#ifndef ANTCOLONYSYSTEMTSPSOLVER_H
+#define ANTCOLONYSYSTEMTSPSOLVER_H
 
 #include "TspSolver.h"
 
-class AntColonySystem : public TspSolver {
+class AntColonySystemTspSolver : public TspSolver {
 
 public:
 

@@ -25,9 +25,9 @@ add_definitions(-DBOOST_ENABLE_ASSERT_DEBUG_HANDLER)
 set(
     CORE_SRC
     src/Position2D.cpp
-    src/AntColonySystem.cpp
     src/RandomTspSolver.cpp
     src/NearestNeighbourTspSolver.cpp
+    src/AntColonySystemTspSolver.cpp
     src/assert.cpp
 )
 
@@ -43,7 +43,7 @@ add_executable(
     ${CORE_SRC}
     src/TourMatcher.cpp
     src/test_main.cpp
-    src/test_AntColonySystem.cpp
+    src/test_AntColonySystemTspSolver.cpp
     src/test_TourMatcher.cpp
     src/test_Position2D.cpp
     src/test_SymmetricPairwiseMatrix.cpp
