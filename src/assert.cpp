@@ -5,16 +5,17 @@
 #include <boost/assert.hpp>
 #include <boost/format.hpp>
 
-#define ASSERTION_MSG(expr, function, file, line) \
-    boost::str(boost::format("%s:%d %s: %s") % file % line % function % expr)
-
 void boost::assertion_failed(
     char const * expr,
     char const * function,
     char const * file,
     long line
 ) {
-    throw std::runtime_error(ASSERTION_MSG(expr, function, file, line));
+    throw std::runtime_error(
+        boost::str(
+            boost::format("%s:%d %s: %s") % file % line % function % expr
+        )
+    );
 }
 
 void boost::assertion_failed_msg(
@@ -24,7 +25,12 @@ void boost::assertion_failed_msg(
     char const * file,
     long line
 ) {
-    throw std::runtime_error(ASSERTION_MSG(expr, function, file, line));
+    throw std::runtime_error(
+        boost::str(
+            boost::format("%s:%d %s: %s %s")
+                % file % line % function % expr % msg
+        )
+    );
 }
 
 #endif
