@@ -3,6 +3,8 @@
 
 #include "PairwiseMatrix.h"
 #include <vector>
+#include <boost/assert.hpp>
+#include <stdexcept>
 
 template<typename T>
 class SymmetricPairwiseMatrix : public PairwiseMatrix<T> {
@@ -37,9 +39,14 @@ SymmetricPairwiseMatrix<T>::SymmetricPairwiseMatrix(int n, T initial) : _n(n), _
 
 template<typename T>
 T& SymmetricPairwiseMatrix<T>::at(int i, int j) {
+    if (i >= _n || j >= _n) {
+        throw std::invalid_argument("2D indices are out of range");
+    }
     int a = std::min(i, j);
     int b = std::max(i, j);
-    return _data[a * _n + b];
+    int index = a * _n + b;
+    BOOST_ASSERT(index < _data.size());
+    return _data[index];
 }
 
 #endif

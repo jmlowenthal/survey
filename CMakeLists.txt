@@ -14,11 +14,20 @@ set(CMAKE_BINRY_DIR ${CMAKE_SOURCE_DIR}/bin)
 set(EXECUTABLE_OUTPUT_PATH ${CMAKE_BINARY_DIR})
 include_directories(include/ lib/catch2/include/)
 
+# Boost libraries
+set(Boost_USE_STATIC_LIBS OFF)
+set(Boost_USE_MULTITHREADED ON)
+set(Boost_USE_STATIC_RUNTIME OFF)
+find_package(Boost REQUIRED COMPONENTS system)
+include_directories(${Boost_INCLUDE_DIRS})
+add_definitions(-DBOOST_ENABLE_ASSERT_DEBUG_HANDLER)
+
 set(
     CORE_SRC
-    src/LinKernighanTspSolver.cpp
     src/Position2D.cpp
+    src/AntColonySystem.cpp
     src/RandomTspSolver.cpp
+    src/assert.cpp
 )
 
 add_executable(
@@ -26,6 +35,7 @@ add_executable(
     ${CORE_SRC}
     src/main.cpp
 )
+target_link_libraries(planner ${Boost_LIBRARIES})
 
 add_executable(
     tests
@@ -37,6 +47,7 @@ add_executable(
     src/test_Position2D.cpp
     src/test_SymmetricPairwiseMatrix.cpp
 )
+target_link_libraries(tests ${Boost_LIBRARIES})
 
 set(CMAKE_MODULE_PATH lib/catch2/cmake/)
 include(CTest)
