@@ -11,7 +11,7 @@
 #include "EuclideanDistanceFunctor.h"
 
 template<typename VertexListGraph, typename OutputIterator>
-void nearest_neighbour_metrix_tsp_approx(
+void nearest_neighbour_metric_tsp_approx(
     const VertexListGraph& graph,
     OutputIterator output
 ) {
@@ -24,7 +24,7 @@ void nearest_neighbour_metrix_tsp_approx(
 }
 
 template<typename VertexListGraph, typename WeightMap, typename OutputIterator>
-void nearest_neighbour_metrix_tsp_approx(
+void nearest_neighbour_metric_tsp_approx(
     const VertexListGraph& graph,
     WeightMap weights,
     OutputIterator output
