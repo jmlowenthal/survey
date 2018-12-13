@@ -27,12 +27,12 @@ public:
 };
 
 template<typename T>
-SymmetricPairwiseMatrix<T>::SymmetricPairwiseMatrix(int n) : _n(n), _data(n * (n - 1) / 2) {
+SymmetricPairwiseMatrix<T>::SymmetricPairwiseMatrix(int n) : _n(n), _data(n * (n + 1) / 2) {
 
 }
 
 template<typename T>
-SymmetricPairwiseMatrix<T>::SymmetricPairwiseMatrix(int n, T initial) : _n(n), _data(n * (n - 1) / 2, initial) {
+SymmetricPairwiseMatrix<T>::SymmetricPairwiseMatrix(int n, T initial) : _n(n), _data(n * (n + 1) / 2, initial) {
 
 }
 
@@ -44,7 +44,7 @@ T& SymmetricPairwiseMatrix<T>::at(int i, int j) {
     }
     int a = std::min(i, j);
     int b = std::max(i, j);
-    int index = a * _n + b;
+    int index = a * (2 * _n - (a - 1)) / 2 + (b - a);
     BOOST_ASSERT(index < _data.size());
     return _data[index];
 }
