@@ -62,7 +62,7 @@ void ACS::iterate(int ant_count, float beta, float q0, float p, float a) {
         ants[j].reserve(_points.size());
         ants[j].push_back(rand() % _points.size());
     }
-    for (int step = 0; step < _points.size(); ++step) {
+    for (int step = 0; step < _points.size() - 1; ++step) {
         for (int i = 0; i < ant_count; ++i) {
 
             // Initialisation and auxilary computation
@@ -108,8 +108,10 @@ void ACS::iterate(int ant_count, float beta, float q0, float p, float a) {
     }
 
     // Find the best tour
-    float best_distance = 0.0f;
-    for (std::vector<int>& ant : ants) {
+    _best_tour = ants[0];
+    float best_distance = tour_distance(_best_tour);
+    for (int i = 1; i < ants.size(); ++i) {
+        std::vector<int>& ant = ants[i];
         float d = tour_distance(ant);
         if (d < best_distance) {
             best_distance = d;
