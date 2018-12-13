@@ -6,7 +6,7 @@
 #include <boost/format.hpp>
 
 #define ASSERTION_MSG(expr, function, file, line) \
-    boost::str(boost::format("%s %d %s: %s") % file % line % function % expr)
+    boost::str(boost::format("%s:%d %s: %s") % file % line % function % expr)
 
 void boost::assertion_failed(
     char const * expr,
