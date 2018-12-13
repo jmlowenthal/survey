@@ -12,7 +12,7 @@ public:
      */
     virtual std::vector<Position2D> solve(
         const std::vector<Position2D>& points
-    )
+    );
 
 };
 
