@@ -27,6 +27,7 @@ set(
     src/Position2D.cpp
     src/AntColonySystem.cpp
     src/RandomTspSolver.cpp
+    src/NearestNeighbourTspSolver.cpp
     src/assert.cpp
 )
 
