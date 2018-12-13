@@ -21,6 +21,17 @@ bool TourMatcher::match(std::vector<Position2D> const& b) const {
             i = 0;
         }
     }
+    for (int j = 2 * a.size() - 1; j >= 0; --j) {
+        if (equal(a[i], b[j % b.size()])) {
+            ++i;
+            if (i >= a.size()) {
+                return true;
+            }
+        }
+        else {
+            i = 0;
+        }
+    }
     return false;
 }
 
@@ -33,6 +44,6 @@ std::string TourMatcher::describe() const {
             ss << ", ";
         }
     }
-    ss << " } considering the lists to be circular and wrap-around";
+    ss << " } considering the lists to be circular, wrap-around and reversable";
     return ss.str();
 }
