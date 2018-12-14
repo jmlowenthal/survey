@@ -24,9 +24,6 @@ add_definitions(-DBOOST_ENABLE_ASSERT_DEBUG_HANDLER)
 
 set(
     CORE_SRC
-    src/Position2D.cpp
-    src/RandomTspSolver.cpp
-    src/AntColonySystemTspSolver.cpp
     src/assert.cpp
 )
 
@@ -41,10 +38,9 @@ add_executable(
     tests
     ${CORE_SRC}
     src/test_main.cpp
-    src/test_AntColonySystemTspSolver.cpp
     src/test_TourMatcher.cpp
-    src/test_Position2D.cpp
-    src/test_SymmetricPairwiseMatrix.cpp
+    src/test_acs_metric_tsp_approx.cpp
+    src/test_nearest_neighbour_metric_tsp_approx.cpp
 )
 target_link_libraries(tests ${Boost_LIBRARIES})
 
