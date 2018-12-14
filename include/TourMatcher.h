@@ -2,7 +2,6 @@
 #define TEST_CIRCULARMATCHER_H
 
 #include "catch.hpp"
-#include "simple_point.h"
 #include <sstream>
 
 template<typename T>
