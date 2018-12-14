@@ -61,8 +61,8 @@ void acs_metric_tsp_approx_from_vertex(
 
         std::vector<std::vector<V>> ants(num_ants);
         for (int i = 0; i < num_ants; ++i) {
-            ants[j].reserve(num_points);
-            ants[j].push_back(random_vertex(g, generator));
+            ants[i].reserve(num_points);
+            ants[i].push_back(random_vertex(g, generator));
         }
         for (int step = 0; step < num_points - 1; ++step) {
             for (int i = 0; i < num_ants; ++i) {
@@ -80,7 +80,7 @@ void acs_metric_tsp_approx_from_vertex(
                     std::pair<V, V> edge(current, j);
                     float nu = 1.0f / weight_map[edge];
                     float prob = pheromone_map[edge] * powf(nu, beta);
-                    probs.set(j, prob)
+                    probs.set(j, prob);
                     normalising += prob;
                     if (best == current || prob > probs.get(best)) {
                         best = j;
