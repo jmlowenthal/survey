@@ -40,7 +40,6 @@ target_link_libraries(planner ${Boost_LIBRARIES})
 add_executable(
     tests
     ${CORE_SRC}
-    src/TourMatcher.cpp
     src/test_main.cpp
     src/test_AntColonySystemTspSolver.cpp
     src/test_TourMatcher.cpp
