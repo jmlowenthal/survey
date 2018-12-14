@@ -1,5 +1,5 @@
 #include "catch.hpp"
-#include "nearest_neighbour_metric_tsp_approx.h"
+#include "acs_metric_tsp_approx.h"
 #include "simple_point.h"
 #include "TourMatcher.h"
 #include <bits/stl_iterator.h>
@@ -9,7 +9,7 @@ typedef simple_point<float> pos;
 typedef adjacency_list<vecS, vecS, directedS, pos> G;
 typedef graph_traits<G>::vertex_descriptor V;
 
-TEST_CASE("[NN] Simple linear 4-node graph", "[full]") {
+TEST_CASE("[ACS] Simple linear 4-node graph", "[full]") {
     G g;
     V a = add_vertex({3, 0}, g);
     V b = add_vertex({0, 0}, g);
@@ -17,11 +17,11 @@ TEST_CASE("[NN] Simple linear 4-node graph", "[full]") {
     V d = add_vertex({1, 0}, g);
     std::vector<V> desired = { b, d, c, a };
     std::vector<V> solution;
-    nearest_neighbour_metric_tsp_approx(g, std::back_inserter(solution));
+    acs_metric_tsp_approx(g, std::back_inserter(solution));
     REQUIRE_THAT(solution, TourEqual(desired));
 }
 
-TEST_CASE("[NN] Circular graph", "[full]") {
+TEST_CASE("[ACS] Circular graph", "[full]") {
     const int N = 8;
     G g;
     std::vector<V> desired(N);
@@ -34,7 +34,7 @@ TEST_CASE("[NN] Circular graph", "[full]") {
             desired[order[i]] = v;
         }
         std::vector<V> solution;
-        nearest_neighbour_metric_tsp_approx(g, std::back_inserter(solution));
+        acs_metric_tsp_approx(g, std::back_inserter(solution));
         REQUIRE_THAT(solution, TourEqual(desired));
     }
 
@@ -46,7 +46,7 @@ TEST_CASE("[NN] Circular graph", "[full]") {
             desired[order[i]] = v;
         }
         std::vector<V> solution;
-        nearest_neighbour_metric_tsp_approx(g, std::back_inserter(solution));
+        acs_metric_tsp_approx(g, std::back_inserter(solution));
         REQUIRE_THAT(solution, TourEqual(desired));
     }
 }
