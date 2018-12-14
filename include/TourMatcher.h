@@ -2,34 +2,66 @@
 #define TEST_CIRCULARMATCHER_H
 
 #include "catch.hpp"
-#include <boost/graph/simple_point.hpp>
 
-#ifndef EPSILON
-#define EPSILON 1e-9
-#endif
-
-class TourMatcher : public Catch::MatcherBase< std::vector<boost::simple_point<float>> > {
+template<typename T>
+class TourMatcher : public Catch::MatcherBase< std::vector<T> > {
 
 private:
 
-    std::vector<boost::simple_point<float>>& a;
-
-    inline bool equal(boost::simple_point<float> const& a, boost::simple_point<float> const& b) const {
-        return fabsf(a.x - b.x) < EPSILON && fabsf(a.y - b.y) < EPSILON;
-    }
+    std::vector<T>& a;
 
 public:
 
-    TourMatcher(std::vector<boost::simple_point<float>>& v);
+    TourMatcher(std::vector<T>& v) : a(v) {}
 
-    virtual bool match(std::vector<boost::simple_point<float>> const& b) const override;
+    virtual bool match(std::vector<T> const& b) const override {
+        if (a.size() != b.size()) {
+            return false;
+        }
+        int i = 0;
+        for (int j = 0; j < 2 * a.size(); ++j) {
+            if (equal(a[i], b[j % b.size()])) {
+                ++i;
+                if (i >= a.size()) {
+                    return true;
+                }
+            }
+            else {
+                i = 0;
+            }
+        }
+        for (int j = 2 * a.size() - 1; j >= 0; --j) {
+            if (equal(a[i], b[j % b.size()])) {
+                ++i;
+                if (i >= a.size()) {
+                    return true;
+                }
+            }
+            else {
+                i = 0;
+            }
+        }
+        return false;
+    }
     
-    virtual std::string describe() const;
+    virtual std::string describe() const {
+        std::ostringstream ss;
+        ss << "is equal to { ";
+        for (int i = 0; i < a.size(); ++i) {
+            ss << a[i];
+            if (i < a.size() - 1) {
+                ss << ", ";
+            }
+        }
+        ss << " } considering the lists to be circular, wrap-around and reversable";
+        return ss.str();
+    }
 
 };
 
-inline TourMatcher TourEqual(std::vector<boost::simple_point<float>>& v) {
-    return TourMatcher(v);
+template<typename T>
+inline TourMatcher TourEqual(std::vector<T>& v) {
+    return TourMatcher<T>(v);
 }
 
 #endif
