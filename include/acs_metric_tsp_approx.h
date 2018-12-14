@@ -96,11 +96,12 @@ void acs_metric_tsp_approx_from_vertex(
                 }
                 else {
                     float choice = ((float)rand()) / __INT_MAX__ * normalising;
-                    for (j : vertices(g)) {
-                        if (choice <= probs.get(j)) {
+                    for (V k : vertices(g)) {
+                        if (choice <= probs.get(k)) {
+                            j = k;
                             break;
                         }
-                        choice -= probs.get(j);
+                        choice -= probs.get(k);
                     }
                 }
                 ant.push_back(j);
@@ -112,7 +113,9 @@ void acs_metric_tsp_approx_from_vertex(
             }
 
             // Find the best tour
-            auto tour_distance = closed_tour ? closed_tour_distance : open_tour_distance;
+            auto tour_distance =
+                closed_tour ? closed_tour_distance<WeightMap, ACS_RESOLUTION, V>
+                    : open_tour_distance<WeightMap, ACS_RESOLUTION, V>;
             std::vector<V>& best_tour = min_element_by(
                 ants.begin(),
                 ants.end(),
