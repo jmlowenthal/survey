@@ -2,25 +2,27 @@
 #define TEST_CIRCULARMATCHER_H
 
 #include "catch.hpp"
+#include "simple_point.h"
+#include <sstream>
 
 template<typename T>
 class TourMatcher : public Catch::MatcherBase< std::vector<T> > {
 
 private:
 
-    std::vector<T>& a;
+    const std::vector<T>& a;
 
 public:
 
-    TourMatcher(std::vector<T>& v) : a(v) {}
+    TourMatcher(const std::vector<T>& v) : a(v) {}
 
-    virtual bool match(std::vector<T> const& b) const override {
+    virtual bool match(const std::vector<T>& b) const override {
         if (a.size() != b.size()) {
             return false;
         }
         int i = 0;
         for (int j = 0; j < 2 * a.size(); ++j) {
-            if (equal(a[i], b[j % b.size()])) {
+            if (a[i] == b[j % b.size()]) {
                 ++i;
                 if (i >= a.size()) {
                     return true;
@@ -31,7 +33,7 @@ public:
             }
         }
         for (int j = 2 * a.size() - 1; j >= 0; --j) {
-            if (equal(a[i], b[j % b.size()])) {
+            if (a[i] == b[j % b.size()]) {
                 ++i;
                 if (i >= a.size()) {
                     return true;
@@ -60,7 +62,7 @@ public:
 };
 
 template<typename T>
-inline TourMatcher TourEqual(std::vector<T>& v) {
+inline TourMatcher<T> TourEqual(std::vector<T>& v) {
     return TourMatcher<T>(v);
 }
 
