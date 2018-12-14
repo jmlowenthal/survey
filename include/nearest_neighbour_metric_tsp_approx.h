@@ -9,7 +9,7 @@
 #include <boost/property_map/property_map.hpp>
 
 #include "EuclideanDistanceFunctor.h"
-#include "min_element.h"
+#include "min_element_by.h"
 
 template<typename VertexListGraph, typename OutputIterator>
 void nearest_neighbour_metric_tsp_approx(
@@ -81,7 +81,7 @@ void nearest_neighbour_metric_tsp_approx_from_vertex(
     vis.visit_vertex(current, g);
 
     while (!to_visit.empty()) {
-        auto best = min_element(
+        auto best = min_element_by(
             to_visit.begin(),
             to_visit.end(),
             [&current, &weight_map](Vertex a) {

@@ -2,7 +2,7 @@
 #define MIN_ELEMENT_H
 
 template<typename Iter, typename Key>
-Iter min_element(const Iter begin, const Iter end, const Key key) {
+Iter min_element_by(const Iter begin, const Iter end, const Key key) {
     Iter itr = begin;
     auto best = key(*itr);
     Iter best_itr = begin;

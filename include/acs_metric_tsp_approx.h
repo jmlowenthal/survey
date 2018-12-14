@@ -15,7 +15,7 @@
 
 #include "EuclideanDistanceFunctor.h"
 #include "tour_distance.h"
-#include "min_element.h"
+#include "min_element_by.h"
 
 /*
     float len = 0.0f;
@@ -113,7 +113,7 @@ void acs_metric_tsp_approx_from_vertex(
 
             // Find the best tour
             auto tour_distance = closed_tour ? closed_tour_distance : open_tour_distance;
-            std::vector<V>& best_tour = min_element(
+            std::vector<V>& best_tour = min_element_by(
                 ants.begin(),
                 ants.end(),
                 tour_distance
