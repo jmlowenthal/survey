@@ -24,14 +24,6 @@
 #include "min_element_by.h"
 #include "nearest_neighbour_metric_tsp_approx.h"
 
-/*
-    float len = 0.0f;
-    for (int i = 0; i < points.size() - 1; ++i) {
-        len += Position2D::distance(points[i], points[i + 1]);
-    }
-    _tau_zero = 1.0f / (len * points.size
-*/
-
 BOOST_PARAMETER_NAME(graph)
 BOOST_PARAMETER_NAME(start)
 BOOST_PARAMETER_NAME(weight_map)
