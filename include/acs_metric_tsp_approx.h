@@ -47,6 +47,48 @@ BOOST_PARAMETER_NAME(a)
 BOOST_PARAMETER_NAME(tau_zero)
 BOOST_PARAMETER_NAME(closed_tour)
 
+BOOST_PARAMETER_FUNCTION(
+    (void),
+    acs_nn_metric_tsp_approx,
+    tag,
+    (required
+        (graph, *)
+        (in_out(visitor), *)
+    )
+    (optional
+        (start, *, *boost::vertices(graph).first)
+        (weight_map, *, (EuclideanDistanceFunctor<graph_type, ACS_RESOLUTION>(graph)))
+        (num_ants, (const int), 100)
+        (iterations, (const int), 100)
+        (beta, (const float), 2.0f)
+        (q0, (const float), 0.9f)
+        (p, (const float), 0.1f)
+        (a, (const float), 0.1f)
+        (closed_tour, (const bool), true)
+    )
+) {
+    typedef typename boost::graph_traits<graph_type>::vertex_descriptor V;
+    std::vector<V> tour;
+    nearest_neighbour_metric_tsp_approx(
+        graph, weight_map, std::back_inserter(tour)
+    );
+    ACS_RESOLUTION len =
+        closed_tour ? closed_tour_distance(tour) : open_tour_distance(tour);
+    acs_metric_tsp_approx(
+        graph,
+        visitor,
+        start,
+        weight_map,
+        num_ants,
+        iterations,
+        beta,
+        q0,
+        p,
+        a,
+        1.0f / (tour.size() * len),
+        closed_tour
+    );
+}
 
 BOOST_PARAMETER_FUNCTION(
     (void),
