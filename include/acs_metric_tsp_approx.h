@@ -25,6 +25,25 @@
     _tau_zero = 1.0f / (len * points.size
 */
 
+template<typename VertexListGraph, typename OutputIterator>
+void acs_metric_tsp_approx(
+    const VertexListGraph& graph,
+    OutputIterator output
+) {
+    BOOST_CONCEPT_ASSERT((boost::VertexListGraphConcept<VertexListGraph>));
+    typedef typename boost::graph_traits<VertexListGraph>::vertex_descriptor V;
+
+    EuclideanDistanceFunctor<VertexListGraph, ACS_RESOLUTION> weight_map(graph);
+    std::map<std::pair<V, V>, float> pheromone_map;
+    acs_metric_tsp_approx_from_vertex(
+        graph,
+        *vertices(graph).first,
+        weight_map,
+        boost::make_assoc_property_map(pheromone_map),
+        boost::tsp_tour_visitor<OutputIterator>(output)
+    );
+}
+
 template<
     typename VertexListGraph,
     typename WeightMap,
@@ -43,7 +62,7 @@ void acs_metric_tsp_approx_from_vertex(
     const float p = 0.1f,
     const float a = 0.1f,
     const float tau_zero = 0.0f,
-    const bool closed_tour = false
+    const bool closed_tour = true
 ) {
     using namespace boost;
 
@@ -55,7 +74,13 @@ void acs_metric_tsp_approx_from_vertex(
 
     const int num_points = num_vertices(g);
 
-    const random::mt11213b generator;
+    random::mt11213b generator;
+
+    auto tour_distance =
+        closed_tour ? closed_tour_distance<WeightMap, ACS_RESOLUTION, V>
+            : open_tour_distance<WeightMap, ACS_RESOLUTION, V>;
+
+    std::vector<V> best_tour;
 
     for (int iteration = 0; iteration < iterations; ++iteration) {
 
@@ -73,70 +98,75 @@ void acs_metric_tsp_approx_from_vertex(
                 float normalising = 0.0f;
                 V current = ant[ant.size() - 1];
                 V best = current;
-                for (V j : vertices(g)) {
-                    if (std::find(ant.begin(), ant.end(), j) != ant.end()) {
+                VItr j, end;
+                for (tie(j, end) = vertices(g); j != end; ++j) {
+                    if (std::find(ant.begin(), ant.end(), *j) != ant.end()) {
                         continue;
                     }
-                    std::pair<V, V> edge(current, j);
+                    std::pair<V, V> edge(current, *j);
                     float nu = 1.0f / weight_map[edge];
                     float prob = pheromone_map[edge] * powf(nu, beta);
-                    probs.set(j, prob);
+                    probs[*j] = prob;
                     normalising += prob;
-                    if (best == current || prob > probs.get(best)) {
-                        best = j;
+                    if (best == current || prob > probs[best]) {
+                        best = *j;
                     }
                 }
 
                 // State transition rule
                 float q = ((float)rand()) / __INT_MAX__;
-                V j;
+                V next;
                 if (q <= q0) {
                     BOOST_ASSERT(best != current);
-                    j = best;
+                    next = best;
                 }
                 else {
                     float choice = ((float)rand()) / __INT_MAX__ * normalising;
-                    for (V k : vertices(g)) {
-                        if (choice <= probs.get(k)) {
-                            j = k;
+                    VItr k;
+                    for (tie(k, end) = vertices(g); k != end; ++k) {
+                        if (choice <= probs[*k]) {
+                            next = *k;
                             break;
                         }
-                        choice -= probs.get(k);
+                        choice -= probs[*k];
                     }
                 }
-                ant.push_back(j);
+                ant.push_back(next);
 
                 // Local updating rule
-                std::pair<V, V> edge(current, j);
+                std::pair<V, V> edge(current, next);
                 pheromone_map[edge] = (1 - p) * pheromone_map[edge] + p * tau_zero;
 
             }
 
             // Find the best tour
-            auto tour_distance =
-                closed_tour ? closed_tour_distance<WeightMap, ACS_RESOLUTION, V>
-                    : open_tour_distance<WeightMap, ACS_RESOLUTION, V>;
-            std::vector<V>& best_tour = min_element_by(
+            best_tour = *min_element_by(
                 ants.begin(),
                 ants.end(),
-                tour_distance
+                [&weight_map, &tour_distance](std::vector<V>& tour) {
+                    return tour_distance(tour, weight_map);
+                }
             );
 
             // Global updating rule
-            for (V i : vertices(g)) {
-                for (V j : vertices(g)) {
-                    std::pair<V, V> edge(i, j);
+            VItr i, j, end_i, end_j;
+            for (tie(i, end_i) = vertices(g); i != end_i; ++i) {
+                for (tie(j, end_j) = vertices(g); j != end_j; ++j) {
+                    std::pair<V, V> edge(*i, *j);
                     pheromone_map[edge] *= (1 - a);
                 }
             }
-            float bonus = a / tour_distance(best_tour);
+            float bonus = a / tour_distance(best_tour, weight_map);
             for (int i = 0; i < best_tour.size() - 1; ++i) {
                 std::pair<V, V> edge(best_tour[i], best_tour[i + 1]);
                 pheromone_map[edge] += bonus;
             }
-
         }
 
+    }
+
+    for (V v : best_tour) {
+        vis.visit_vertex(v, g);
     }
 
 }
