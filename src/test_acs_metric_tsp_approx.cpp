@@ -17,7 +17,9 @@ TEST_CASE("[ACS] Simple linear 4-node graph", "[full]") {
     V d = add_vertex({1, 0}, g);
     std::vector<V> desired = { b, d, c, a };
     std::vector<V> solution;
-    acs_metric_tsp_approx(g, std::back_inserter(solution));
+    auto itr = std::back_inserter(solution);
+    auto vis = boost::make_tsp_tour_visitor(itr);
+    acs_metric_tsp_approx(g, vis);
     REQUIRE_THAT(solution, TourEqual(desired));
 }
 
@@ -34,7 +36,9 @@ TEST_CASE("[ACS] Circular graph", "[full]") {
             desired[order[i]] = v;
         }
         std::vector<V> solution;
-        acs_metric_tsp_approx(g, std::back_inserter(solution));
+        auto itr = std::back_inserter(solution);
+        auto vis = boost::make_tsp_tour_visitor(itr);
+        acs_metric_tsp_approx(g, vis);        
         REQUIRE_THAT(solution, TourEqual(desired));
     }
 
@@ -46,7 +50,9 @@ TEST_CASE("[ACS] Circular graph", "[full]") {
             desired[order[i]] = v;
         }
         std::vector<V> solution;
-        acs_metric_tsp_approx(g, std::back_inserter(solution));
+        auto itr = std::back_inserter(solution);
+        auto vis = boost::make_tsp_tour_visitor(itr);
+        acs_metric_tsp_approx(g, vis);
         REQUIRE_THAT(solution, TourEqual(desired));
     }
 }
