@@ -13,7 +13,7 @@ inline Res open_tour_distance(std::vector<V>& tour, WeightMap weight_map) {
 template<typename WeightMap, typename Res, typename V>
 inline Res closed_tour_distance(std::vector<V>& tour, WeightMap weight_map) {
     Res extra = weight_map[std::pair<V, V>(tour[tour.size() - 1], tour[0])];
-    return open_tour_distance(tour, weight_map) + extra;
+    return open_tour_distance<WeightMap, Res, V>(tour, weight_map) + extra;
 };
 
 #endif
