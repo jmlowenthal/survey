@@ -29,7 +29,7 @@ TEST_CASE("[NN] Circular graph", "[full]") {
     SECTION("Rotated") {
         int order[]{ 3, 4, 5, 6, 7, 0, 1, 2 };
         for (int i = 0; i < N; ++i) {
-            float theta = ((float)order[i]) / ((float) N);
+            float theta = 2 * M_PI * ((float)order[i]) / ((float) N);
             V v = add_vertex({cosf(theta), sinf(theta)}, g);
             desired[order[i]] = v;
         }
@@ -41,7 +41,7 @@ TEST_CASE("[NN] Circular graph", "[full]") {
     SECTION("Reordered") {
         int order[]{ 4, 7, 5, 1, 3, 0, 2, 6 };
         for (int i = 0; i < N; ++i) {
-            float theta = ((float)order[i]) / ((float) N);
+            float theta = 2 * M_PI * ((float)order[i]) / ((float) N);
             V v = add_vertex({cosf(theta), sinf(theta)}, g);
             desired[order[i]] = v;
         }
