@@ -206,18 +206,9 @@ BOOST_PARAMETER_FUNCTION(
             );
 
             // Global updating rule
-            VItr i, j, end_i, end_j;
-            for (tie(i, end_i) = vertices(graph); i != end_i; ++i) {
-                for (tie(j, end_j) = vertices(graph); j != end_j; ++j) {
-                    std::pair<V, V> edge(*i, *j);
-                    pheromone_map[edge] *= (1 - a);
-                }
-            }
-            float bonus = a / tour_distance(best_tour, weight_map);
-            for (int i = 0; i < best_tour.size() - 1; ++i) {
-                std::pair<V, V> edge(best_tour[i], best_tour[i + 1]);
-                pheromone_map[edge] += bonus;
-            }
+            acs_global_update(
+
+            );
         }
 
     }
@@ -239,8 +230,10 @@ inline typename boost::graph_traits<Graph>::vertex_descriptor acs_find_best(
     const float beta,
     const float nu,
 ) {
-    typedef typename graph_traits<graph_type>::vertex_descriptor V;
-    typedef typename graph_traits<graph_type>::vertex_iterator VItr;
+    using namespace boost;
+
+    typedef typename graph_traits<Graph>::vertex_descriptor V;
+    typedef typename graph_traits<Graph>::vertex_iterator VItr;
 
     VItr j, end;
     for (tie(j, end) = vertices(graph); j != end; ++j) {
@@ -267,6 +260,8 @@ inline typename boost::graph_traits<Graph>::vertex_descriptor acs_state_transiti
     const float q0,
     const std::map<typename boost::graph_traits<Graph>::vertex_descriptor>& probs,    
 ) {
+    using namespace boost;
+
     typedef typename graph_traits<graph_type>::vertex_iterator VItr;
 
     float q = ((float)rand()) / __INT_MAX__;
@@ -286,9 +281,9 @@ inline typename boost::graph_traits<Graph>::vertex_descriptor acs_state_transiti
     }
 }
 
-template<typename V>
+template<typename V, typename PMap>
 inline void acs_local_update(
-    std::map<std::pair<V, V>, float> pheromone_map,
+    PMap pheromone_map,
     const V& current,
     const V& next,
     const float p,
@@ -296,6 +291,32 @@ inline void acs_local_update(
 ) {
     std::pair<V, V> edge(current, next);
     pheromone_map[edge] = (1 - p) * pheromone_map[edge] + p * tau_zero;
+}
+
+template<typename Graph, PMap, WMap>
+inline void acs_global_update(
+    const Graph& graph,
+    PMap& pheromone_map,
+    const std::vector<boost::graph_traits<Graph>::vertex_descriptor>& best_tour,
+    const WMap& weight_map
+) {
+    using namespace boost;
+
+    typedef typename graph_traits<Graph>::vertex_descriptor V;
+    typedef typename graph_traits<Graph>::vertex_iterator VItr;
+
+    VItr i, j, end_i, end_j;
+    for (tie(i, end_i) = vertices(graph); i != end_i; ++i) {
+        for (tie(j, end_j) = vertices(graph); j != end_j; ++j) {
+            std::pair<V, V> edge(*i, *j);
+            pheromone_map[edge] *= (1 - a);
+        }
+    }
+    float bonus = a / tour_distance(best_tour, weight_map);
+    for (int i = 0; i < best_tour.size() - 1; ++i) {
+        std::pair<V, V> edge(best_tour[i], best_tour[i + 1]);
+        pheromone_map[edge] += bonus;
+    }
 }
 
 #endif
