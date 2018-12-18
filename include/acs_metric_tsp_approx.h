@@ -40,28 +40,20 @@ BOOST_PARAMETER_NAME(tau_zero)
 BOOST_PARAMETER_NAME(closed_tour)
 
 /**
- * Computes an approximate solution to the Traveling Salesperson Problem using
- * the Ant Colony System which has been initialised using the Nearest-Neighbour
- * heuristic, as described by Marco Dorigo et al, 1997 [1].
+ * Computes the Nearest-Neighbour heuristic for tau-zero, as described by Marco
+ * Dorigo et al, 1997 [1].
  * [1]: http://people.idsia.ch/~luca/acs-ec97.pdf
  */
 BOOST_PARAMETER_FUNCTION(
-    (void),
-    acs_nn_metric_tsp_approx,
+    (float),
+    acs_nn_heuristic,
     tag,
     (required
         (graph, *)
-        (in_out(visitor), *)
     )
     (optional
         (start, *, *boost::vertices(graph).first)
         (weight_map, *, (EuclideanDistanceFunctor<graph_type, ACS_RESOLUTION>(graph)))
-        (num_ants, (const int), 100)
-        (iterations, (const int), 100)
-        (beta, (const float), 2.0f)
-        (q0, (const float), 0.9f)
-        (p, (const float), 0.1f)
-        (a, (const float), 0.1f)
         (closed_tour, (const bool), true)
     )
 ) {
@@ -70,22 +62,11 @@ BOOST_PARAMETER_FUNCTION(
     nearest_neighbour_metric_tsp_approx(
         graph, weight_map, std::back_inserter(tour)
     );
-    ACS_RESOLUTION len =
-        closed_tour ? closed_tour_distance(tour) : open_tour_distance(tour);
-    acs_metric_tsp_approx(
-        graph,
-        visitor,
-        start,
-        weight_map,
-        num_ants,
-        iterations,
-        beta,
-        q0,
-        p,
-        a,
-        1.0f / (tour.size() * len),
-        closed_tour
-    );
+    auto tour_distance =
+        closed_tour ? closed_tour_distance<weight_map_type, ACS_RESOLUTION, V>
+            : open_tour_distance<weight_map_type, ACS_RESOLUTION, V>;
+    ACS_RESOLUTION len = tour_distance(tour, weight_map);
+    return 1.0f / (tour.size() * len);
 }
 
 /**
@@ -110,13 +91,13 @@ BOOST_PARAMETER_FUNCTION(
         (q0, (const float), 0.9f)
         (p, (const float), 0.1f)
         (a, (const float), 0.1f)
-        (tau_zero, (const float), 0.0f)
         (closed_tour, (const bool), true)
+        (tau_zero, (const float), acs_nn_heuristic(graph, start, weight_map, closed_tour))
     )
 ) {
     std::map<std::pair<start_type, start_type>, float> pmap;
     acs_metric_tsp_approx_iterate(graph, pmap, visitor, start, weight_map,
-        num_ants, iterations, beta, q0, p, a, tau_zero, closed_tour);
+        num_ants, iterations, beta, q0, p, a, closed_tour, tau_zero);
 }
 
 /**
@@ -182,7 +163,7 @@ inline typename boost::graph_traits<Graph>::vertex_descriptor acs_state_transiti
         float choice = ((float)rand()) / __INT_MAX__ * normalising;
         VItr k, end;
         for (tie(k, end) = vertices(graph); k != end; ++k) {
-            if (choice <= probs[*k]) {
+            if (choice <= probs[*k] && probs[*k] > 0) {
                 return *k;
             }
             choice -= probs[*k];
@@ -200,7 +181,7 @@ inline typename boost::graph_traits<Graph>::vertex_descriptor acs_state_transiti
  */
 template<typename V, typename PMap>
 inline void acs_local_update(
-    PMap pheromone_map,
+    PMap& pheromone_map,
     const V& current,
     const V& next,
     const float p,
@@ -266,8 +247,9 @@ BOOST_PARAMETER_FUNCTION(
         (q0, (const float), 0.9f)
         (p, (const float), 0.1f)
         (a, (const float), 0.1f)
-        (tau_zero, (const float), 0.0f)
         (closed_tour, (const bool), true)
+        (tau_zero, (const float), acs_nn_heuristic(graph, start, weight_map, closed_tour))
+        
     )
 ) {
     using namespace boost;
@@ -293,7 +275,12 @@ BOOST_PARAMETER_FUNCTION(
         std::vector<std::vector<V>> ants(num_ants);
         for (int i = 0; i < num_ants; ++i) {
             ants[i].reserve(num_points);
-            ants[i].push_back(random_vertex(graph, generator));
+            if (iteration + 1 == iterations) {
+                ants[i].push_back(start);
+            }
+            else {
+                ants[i].push_back(random_vertex(graph, generator));
+            }
         }
         for (int step = 0; step < num_points - 1; ++step) {
             for (int i = 0; i < num_ants; ++i) {
@@ -338,13 +325,17 @@ BOOST_PARAMETER_FUNCTION(
         }
 
         // Find the best tour
-        best_tour = *min_element_by(
+        std::vector<V> tour = *min_element_by(
             ants.begin(),
             ants.end(),
             [&weight_map, &tour_distance](std::vector<V>& tour) {
                 return tour_distance(tour, weight_map);
             }
         );
+
+        if (best_tour.size() == 0 || tour_distance(tour, weight_map) < tour_distance(best_tour, weight_map)) {
+            best_tour = tour;
+        }
 
         // Global updating rule
         acs_global_update(
