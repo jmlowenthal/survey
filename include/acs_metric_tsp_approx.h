@@ -163,45 +163,36 @@ BOOST_PARAMETER_FUNCTION(
                 std::map<V, float> probs;
                 float normalising = 0.0f;
                 V current = ant[ant.size() - 1];
-                V best = current;
-                VItr j, end;
-                for (tie(j, end) = vertices(graph); j != end; ++j) {
-                    if (std::find(ant.begin(), ant.end(), *j) != ant.end()) {
-                        continue;
-                    }
-                    std::pair<V, V> edge(current, *j);
-                    float nu = 1.0f / weight_map[edge];
-                    float prob = pheromone_map[edge] * powf(nu, beta);
-                    probs[*j] = prob;
-                    normalising += prob;
-                    if (best == current || prob > probs[best]) {
-                        best = *j;
-                    }
-                }
+                V best = acs_find_best(
+                    graph,
+                    ant,
+                    current,
+                    pheromone_map,
+                    probs,
+                    normalising,
+                    beta,
+                    nu
+                );
 
                 // State transition rule
-                float q = ((float)rand()) / __INT_MAX__;
-                V next;
-                if (q <= q0) {
-                    BOOST_ASSERT(best != current);
-                    next = best;
-                }
-                else {
-                    float choice = ((float)rand()) / __INT_MAX__ * normalising;
-                    VItr k;
-                    for (tie(k, end) = vertices(graph); k != end; ++k) {
-                        if (choice <= probs[*k]) {
-                            next = *k;
-                            break;
-                        }
-                        choice -= probs[*k];
-                    }
-                }
+                V next = acs_state_transition(
+                    graph,
+                    current,
+                    best,
+                    normalising,
+                    q0,
+                    probs
+                );
                 ant.push_back(next);
 
                 // Local updating rule
-                std::pair<V, V> edge(current, next);
-                pheromone_map[edge] = (1 - p) * pheromone_map[edge] + p * tau_zero;
+                acs_local_update(
+                    pheromone_map,
+                    current,
+                    next,
+                    p,
+                    tau_zero
+                );
 
             }
 
@@ -235,6 +226,76 @@ BOOST_PARAMETER_FUNCTION(
         visitor.visit_vertex(v, graph);
     }
 
+}
+
+template<typename Graph, PMap>
+inline typename boost::graph_traits<Graph>::vertex_descriptor acs_find_best(
+    const Graph& graph,
+    const std::vector<typename boost::graph_traits<Graph>::vertex_descriptor>& ant,
+    typename boost::graph_traits<Graph>::vertex_descriptor current,
+    const PMap& pheromone_map,
+    std::map<typename boost::graph_traits<Graph>::vertex_descriptor>& probs,
+    float& normalising,
+    const float beta,
+    const float nu,
+) {
+    typedef typename graph_traits<graph_type>::vertex_descriptor V;
+    typedef typename graph_traits<graph_type>::vertex_iterator VItr;
+
+    VItr j, end;
+    for (tie(j, end) = vertices(graph); j != end; ++j) {
+        if (std::find(ant.begin(), ant.end(), *j) != ant.end()) {
+            continue;
+        }
+        std::pair<V, V> edge(current, *j);
+        float nu = 1.0f / weight_map[edge];
+        float prob = pheromone_map[edge] * powf(nu, beta);
+        probs[*j] = prob;
+        normalising += prob;
+        if (best == current || prob > probs[best]) {
+            best = *j;
+        }
+    }
+}
+
+template<typename Graph>
+inline typename boost::graph_traits<Graph>::vertex_descriptor acs_state_transition(
+    const Graph& graph,
+    const boost::graph_traits<Graph>::vertex_descriptor current,
+    const boost::graph_traits<Graph>::vertex_descriptor best,
+    const float normalising,
+    const float q0,
+    const std::map<typename boost::graph_traits<Graph>::vertex_descriptor>& probs,    
+) {
+    typedef typename graph_traits<graph_type>::vertex_iterator VItr;
+
+    float q = ((float)rand()) / __INT_MAX__;
+    if (q <= q0) {
+        BOOST_ASSERT(best != current);
+        return best;
+    }
+    else {
+        float choice = ((float)rand()) / __INT_MAX__ * normalising;
+        VItr k;
+        for (tie(k, end) = vertices(graph); k != end; ++k) {
+            if (choice <= probs[*k]) {
+                return *k;
+            }
+            choice -= probs[*k];
+        }
+    }
+}
+
+template<typename V>
+inline void acs_local_update(
+    std::map<std::pair<V, V>, float> pheromone_map,
+    const V& current,
+    const V& next,
+    const float p,
+    const float tau_zero
+) {
+    std::pair<V, V> edge(current, next);
+    pheromone_map[edge] = (1 - p) * pheromone_map[edge] + p * tau_zero;
 }
 
 #endif
