@@ -104,8 +104,8 @@ BOOST_PARAMETER_FUNCTION(
     )
 ) {
     std::map<std::pair<start_type, start_type>, float> pmap;
-    acs_metric_tsp_approx_iterate(graph, pmap, visitor, start, weight_map, num_ants,
-        iterations, beta, q0, p, a, tau_zero, closed_tour);
+    acs_metric_tsp_approx_iterate(graph, pmap, visitor, start, weight_map,
+        num_ants, iterations, beta, q0, p, a, tau_zero, closed_tour);
 }
 
 BOOST_PARAMETER_FUNCTION(
