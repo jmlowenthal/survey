@@ -39,6 +39,12 @@ BOOST_PARAMETER_NAME(a)
 BOOST_PARAMETER_NAME(tau_zero)
 BOOST_PARAMETER_NAME(closed_tour)
 
+/**
+ * Computes an approximate solution to the Traveling Salesperson Problem using
+ * the Ant Colony System which has been initialised using the Nearest-Neighbour
+ * heuristic, as described by Marco Dorigo et al, 1997 [1].
+ * [1]: http://people.idsia.ch/~luca/acs-ec97.pdf
+ */
 BOOST_PARAMETER_FUNCTION(
     (void),
     acs_nn_metric_tsp_approx,
@@ -82,6 +88,11 @@ BOOST_PARAMETER_FUNCTION(
     );
 }
 
+/**
+ * Computes an approximate solution to the Traveling Salesperson Problem using
+ * the Ant Colony System as described by Marco Dorigo et al, 1997 [1].
+ * [1]: http://people.idsia.ch/~luca/acs-ec97.pdf
+ */
 BOOST_PARAMETER_FUNCTION(
     (void),
     acs_metric_tsp_approx,
@@ -108,6 +119,12 @@ BOOST_PARAMETER_FUNCTION(
         num_ants, iterations, beta, q0, p, a, tau_zero, closed_tour);
 }
 
+/**
+ * Finds the most probable next node to visit for the given ant, as described by
+ * Marco Dorigo et al, 1997 [1]. This function will also update `probs` to be a
+ * map from vertices to their probabilities.
+ * [1]: http://people.idsia.ch/~luca/acs-ec97.pdf
+ */
 template<typename Graph, typename PMap, typename WMap>
 inline typename boost::graph_traits<Graph>::vertex_descriptor acs_find_best(
     const Graph& graph,
@@ -142,6 +159,11 @@ inline typename boost::graph_traits<Graph>::vertex_descriptor acs_find_best(
     return best;
 }
 
+/**
+ * Produces the next vertex for the given ant based on the current state, as
+ * described by Marco Dorigo et al, 1997 [1].
+ * [1]: http://people.idsia.ch/~luca/acs-ec97.pdf 
+ */
 template<typename Graph>
 inline typename boost::graph_traits<Graph>::vertex_descriptor acs_state_transition(
     const Graph& graph,
@@ -171,6 +193,11 @@ inline typename boost::graph_traits<Graph>::vertex_descriptor acs_state_transiti
     return best;
 }
 
+/**
+ * Updates the pheromone map based on the transition chosen by the given ant, as
+ * described by Marco Dorigo et al, 1997 [1].
+ * [1]: http://people.idsia.ch/~luca/acs-ec97.pdf
+ */
 template<typename V, typename PMap>
 inline void acs_local_update(
     PMap pheromone_map,
@@ -183,6 +210,11 @@ inline void acs_local_update(
     pheromone_map[edge] = (1 - p) * pheromone_map[edge] + p * tau_zero;
 }
 
+/**
+ * Updates the pheromone map based on the best produces tour in this iteration,
+ * as described by Marco Dorigo et al, 1997 [1].
+ * [1]: http://people.idsia.ch/~luca/acs-ec97.pdf
+ */
 template<typename Graph, typename PMap, typename WMap, typename Func>
 inline void acs_global_update(
     const Graph& graph,
@@ -211,6 +243,11 @@ inline void acs_global_update(
     }
 }
 
+/**
+ * Computes an approximate solution to the Traveling Salesperson Problem using
+ * the Ant Colony System as described by Marco Dorigo et al, 1997 [1].
+ * [1]: http://people.idsia.ch/~luca/acs-ec97.pdf
+ */
 BOOST_PARAMETER_FUNCTION(
     (void),
     acs_metric_tsp_approx_iterate,
@@ -298,26 +335,26 @@ BOOST_PARAMETER_FUNCTION(
                 );
 
             }
-
-            // Find the best tour
-            best_tour = *min_element_by(
-                ants.begin(),
-                ants.end(),
-                [&weight_map, &tour_distance](std::vector<V>& tour) {
-                    return tour_distance(tour, weight_map);
-                }
-            );
-
-            // Global updating rule
-            acs_global_update(
-                graph,
-                pheromone_map,
-                best_tour,
-                weight_map,
-                a,
-                tour_distance
-            );
         }
+
+        // Find the best tour
+        best_tour = *min_element_by(
+            ants.begin(),
+            ants.end(),
+            [&weight_map, &tour_distance](std::vector<V>& tour) {
+                return tour_distance(tour, weight_map);
+            }
+        );
+
+        // Global updating rule
+        acs_global_update(
+            graph,
+            pheromone_map,
+            best_tour,
+            weight_map,
+            a,
+            tour_distance
+        );
 
     }
 
