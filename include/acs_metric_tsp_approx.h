@@ -25,7 +25,6 @@
 #include "nearest_neighbour_metric_tsp_approx.h"
 
 BOOST_PARAMETER_NAME(graph)
-BOOST_PARAMETER_NAME(start)
 BOOST_PARAMETER_NAME(weight_map)
 BOOST_PARAMETER_NAME(pheromone_map)
 BOOST_PARAMETER_NAME(visitor)
@@ -37,7 +36,6 @@ BOOST_PARAMETER_NAME(q0)
 BOOST_PARAMETER_NAME(p)
 BOOST_PARAMETER_NAME(a)
 BOOST_PARAMETER_NAME(tau_zero)
-BOOST_PARAMETER_NAME(closed_tour)
 
 /**
  * Computes the Nearest-Neighbour heuristic for tau-zero, as described by Marco
@@ -52,9 +50,7 @@ BOOST_PARAMETER_FUNCTION(
         (graph, *)
     )
     (optional
-        (start, *, *boost::vertices(graph).first)
         (weight_map, *, (EuclideanDistanceFunctor<graph_type, ACS_RESOLUTION>(graph)))
-        (closed_tour, (const bool), true)
     )
 ) {
     typedef typename boost::graph_traits<graph_type>::vertex_descriptor V;
@@ -62,10 +58,7 @@ BOOST_PARAMETER_FUNCTION(
     nearest_neighbour_metric_tsp_approx(
         graph, weight_map, std::back_inserter(tour)
     );
-    auto tour_distance =
-        closed_tour ? closed_tour_distance<weight_map_type, ACS_RESOLUTION, V>
-            : open_tour_distance<weight_map_type, ACS_RESOLUTION, V>;
-    ACS_RESOLUTION len = tour_distance(tour, weight_map);
+    ACS_RESOLUTION len = tour_distance<weight_map_type, ACS_RESOLUTION, V>(tour, weight_map);
     return 1.0f / (tour.size() * len);
 }
 
@@ -83,7 +76,6 @@ BOOST_PARAMETER_FUNCTION(
         (in_out(visitor), *)
     )
     (optional
-        (start, *, *boost::vertices(graph).first)
         (weight_map, *, (EuclideanDistanceFunctor<graph_type, ACS_RESOLUTION>(graph)))
         (num_ants, (const int), 100)
         (iterations, (const int), 100)
@@ -91,13 +83,13 @@ BOOST_PARAMETER_FUNCTION(
         (q0, (const float), 0.9f)
         (p, (const float), 0.1f)
         (a, (const float), 0.1f)
-        (closed_tour, (const bool), true)
-        (tau_zero, (const float), acs_nn_heuristic(graph, start, weight_map, closed_tour))
+        (tau_zero, (const float), acs_nn_heuristic(graph, weight_map))
     )
 ) {
-    std::map<std::pair<start_type, start_type>, float> pmap;
-    acs_metric_tsp_approx_iterate(graph, pmap, visitor, start, weight_map,
-        num_ants, iterations, beta, q0, p, a, closed_tour, tau_zero);
+    typedef typename boost::graph_traits<graph_type>::vertex_descriptor V;
+    std::map<std::pair<V, V>, float> pmap;
+    acs_metric_tsp_approx_iterate(graph, pmap, visitor, weight_map, num_ants,
+        iterations, beta, q0, p, a, tau_zero);
 }
 
 /**
@@ -196,14 +188,13 @@ inline void acs_local_update(
  * as described by Marco Dorigo et al, 1997 [1].
  * [1]: http://people.idsia.ch/~luca/acs-ec97.pdf
  */
-template<typename Graph, typename PMap, typename WMap, typename Func>
+template<typename Graph, typename PMap, typename WMap>
 inline void acs_global_update(
     const Graph& graph,
     PMap& pheromone_map,
     const std::vector<typename boost::graph_traits<Graph>::vertex_descriptor>& best_tour,
     const WMap& weight_map,
-    const float a,
-    Func tour_distance
+    const float a
 ) {
     using namespace boost;
 
@@ -217,7 +208,7 @@ inline void acs_global_update(
             pheromone_map[edge] *= (1 - a);
         }
     }
-    float bonus = a / tour_distance(best_tour, weight_map);
+    float bonus = a / tour_distance<const WMap, ACS_RESOLUTION, V>(best_tour, weight_map);
     for (int i = 0; i < best_tour.size() - 1; ++i) {
         std::pair<V, V> edge(best_tour[i], best_tour[i + 1]);
         pheromone_map[edge] += bonus;
@@ -239,7 +230,6 @@ BOOST_PARAMETER_FUNCTION(
         (in_out(visitor), *)
     )
     (optional
-        (start, *, *boost::vertices(graph).first)
         (weight_map, *, (EuclideanDistanceFunctor<graph_type, ACS_RESOLUTION>(graph)))
         (num_ants, (const int), 100)
         (iterations, (const int), 100)
@@ -247,8 +237,7 @@ BOOST_PARAMETER_FUNCTION(
         (q0, (const float), 0.9f)
         (p, (const float), 0.1f)
         (a, (const float), 0.1f)
-        (closed_tour, (const bool), true)
-        (tau_zero, (const float), acs_nn_heuristic(graph, start, weight_map, closed_tour))
+        (tau_zero, (const float), acs_nn_heuristic(graph, weight_map))
         
     )
 ) {
@@ -264,10 +253,6 @@ BOOST_PARAMETER_FUNCTION(
 
     random::mt11213b generator;
 
-    auto tour_distance =
-        closed_tour ? closed_tour_distance<weight_map_type, ACS_RESOLUTION, V>
-            : open_tour_distance<weight_map_type, ACS_RESOLUTION, V>;
-
     std::vector<V> best_tour;
 
     for (int iteration = 0; iteration < iterations; ++iteration) {
@@ -275,12 +260,7 @@ BOOST_PARAMETER_FUNCTION(
         std::vector<std::vector<V>> ants(num_ants);
         for (int i = 0; i < num_ants; ++i) {
             ants[i].reserve(num_points);
-            if (iteration + 1 == iterations) {
-                ants[i].push_back(start);
-            }
-            else {
-                ants[i].push_back(random_vertex(graph, generator));
-            }
+            ants[i].push_back(random_vertex(graph, generator));
         }
         for (int step = 0; step < num_points - 1; ++step) {
             for (int i = 0; i < num_ants; ++i) {
@@ -328,12 +308,16 @@ BOOST_PARAMETER_FUNCTION(
         std::vector<V> tour = *min_element_by(
             ants.begin(),
             ants.end(),
-            [&weight_map, &tour_distance](std::vector<V>& tour) {
-                return tour_distance(tour, weight_map);
+            [&weight_map](std::vector<V>& tour) {
+                return tour_distance<weight_map_type, ACS_RESOLUTION, V>(tour, weight_map);
             }
         );
 
-        if (best_tour.size() == 0 || tour_distance(tour, weight_map) < tour_distance(best_tour, weight_map)) {
+        if (
+            best_tour.size() == 0
+            || tour_distance<weight_map_type, ACS_RESOLUTION, V>(tour, weight_map)
+                < tour_distance<weight_map_type, ACS_RESOLUTION, V>(best_tour, weight_map)
+        ) {
             best_tour = tour;
         }
 
@@ -343,8 +327,7 @@ BOOST_PARAMETER_FUNCTION(
             pheromone_map,
             best_tour,
             weight_map,
-            a,
-            tour_distance
+            a
         );
 
     }
