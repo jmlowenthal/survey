@@ -12,6 +12,8 @@ cmake_minimum_required (VERSION 3.0)
 project (GlobalPlanner)
 set(CMAKE_BINARY_DIR ${CMAKE_SOURCE_DIR}/bin)
 set(EXECUTABLE_OUTPUT_PATH ${CMAKE_BINARY_DIR})
+set(CMAKE_CXX_STANDARD 17)
+
 include_directories(include/ lib/catch2/include/)
 
 # Boost libraries
