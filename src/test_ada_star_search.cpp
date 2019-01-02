@@ -20,7 +20,8 @@ TEST_CASE("[ADA] Optimality", "[full]") {
     V destination = random_vertex(g, generator);
 
     EuclideanDistanceFunctor<G, float> weight_map(g);
-    associative_property_map<std::map<V, V>> pred_map;
+    std::map<V, V> pred_map_map;
+    associative_property_map<std::map<V, V>> pred_map(pred_map_map);
     dijkstra_shortest_paths(
         g,
         source,
@@ -38,6 +39,34 @@ TEST_CASE("[ADA] Optimality", "[full]") {
     std::reverse(desired.begin(), desired.end());
 
     REQUIRE(desired.size() > 0);
-    REQUIRE(1 < 0);
+
+    associative_property_map<std::map<V, float>> g_map = make_g(
+        source,
+        destination
+    );
+    
+    ada_star_search(
+        g,
+        source,
+        destination,
+        _weight_map=weight_map,
+        _g=g_map
+    );
+
+    std::vector<V> solution;
+    current = source;
+    while (current != destination) {
+        solution.push_back(current);
+        current = ada_star_next_step(
+            g,
+            current,
+            weight_map,
+            g_map
+        );
+    }
+    solution.push_back(current);
+
+    REQUIRE(solution.size() > 0);
+    REQUIRE(solution == desired);
 
 }
