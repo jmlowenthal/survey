@@ -44,6 +44,7 @@ add_executable(
     src/test_acs_metric_tsp_approx.cpp
     src/test_nearest_neighbour_metric_tsp_approx.cpp
     # src/test_acs_metric_sop_approx.cpp
+    src/test_ada_star_search.cpp
 )
 target_link_libraries(tests ${Boost_LIBRARIES})
 
