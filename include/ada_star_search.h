@@ -9,6 +9,8 @@
 #include <boost/concept_check.hpp>
 #include <boost/property_map/property_map.hpp>
 #include <boost/mpl/assert.hpp>
+#include <boost/graph/graph_concepts.hpp>
+#include <boost/property_map/property_map.hpp>
 
 #include <map>
 #include <set>
@@ -56,8 +58,8 @@ template<typename V>
 inline boost::associative_property_map<std::map<V, float>> make_g(V start, V goal) {
     std::map<V, float> map;
     boost::associative_property_map<std::map<V, float>> s(map);
-    s[start] = __FLT_MAX__;
-    s[goal] = __FLT_MAX__;
+    put(s, start, __FLT_MAX__);
+    put(s, goal, __FLT_MAX__);
     return s;
 }
 
@@ -65,8 +67,8 @@ template<typename V>
 inline boost::associative_property_map<std::map<V, float>> make_rhs(V start, V goal) {
     std::map<V, float> map;
     boost::associative_property_map<std::map<V, float>> s(map);
-    s[start] = __FLT_MAX__;
-    s[goal] = 0;
+    put(s, start, __FLT_MAX__);
+    put(s, goal, 0);
     return s;
 }
 
@@ -103,11 +105,14 @@ inline std::pair<float, float> ada_key(
     const float suboptimality
 ) {
     std::pair<V, V> edge(start, s);
-    if (g[s] < rhs[s]) {
-        return { rhs[s] + suboptimality * heuristic[edge], rhs[s] };
+    if (get(g, s) < get(rhs, s)) {
+        return {
+            get(rhs, s) + suboptimality * get(heuristic, edge),
+            get(rhs, s)
+        };
     }
     else {
-        return { g[s] + heuristic[edge], g[s] };
+        return { get(g, s) + get(heuristic, edge), get(g, s) };
     }
 }
 
@@ -131,9 +136,9 @@ inline void ada_update_state(
     typedef typename graph_traits<G>::vertex_descriptor V;
 
     // If s was not visited before
-    if (visited[s]) {
-        visited[s] = true;
-        g[s] = __FLT_MAX__;
+    if (get(visited, s)) {
+        put(visited, s, true);
+        put(g, s, __FLT_MAX__);
     }
 
     // If s != goal, update rhs
@@ -144,12 +149,12 @@ inline void ada_update_state(
         for (tie(i, end) = out_edges(s, graph); i != end; ++i) {
             V s_prime = target(*i, graph);
             std::pair<V, V> edge(s, s_prime);
-            float d = weight_map[edge] + g[s_prime];
+            float d = get(weight_map, edge) + get(g, s_prime);
             if (d < bd) {
                 bd = d;
             }
         }
-        rhs[s] = bd;
+        put(rhs, s, bd);
     }
 
     // Remove s from open_set
@@ -161,9 +166,12 @@ inline void ada_update_state(
         }
     }
 
-    if (g[s] != rhs[s]) {
+    if (get(g, s) != get(rhs, s)) {
         if (closed_set.count(s) <= 0) {
-            open_set.push_back({ ada_key(g, rhs, heuristic, s, start, suboptimality), s });
+            open_set.push_back({
+                ada_key(g, rhs, heuristic, s, start, suboptimality),
+                s
+            });
             std::push_heap(open_set.begin(), open_set.end());
         }
         else {
@@ -193,7 +201,7 @@ inline void ada_compute_or_improve_path(
 
     while (
         open_set[0].first < ada_key(g, rhs, heuristic, start, start, suboptimality)
-        || rhs[start] != g[start]
+        || get(rhs, start) != get(g, start)
     ) {
         //TODO minheap
         // Pop s from the min-heap
@@ -201,12 +209,12 @@ inline void ada_compute_or_improve_path(
         std::pop_heap(open_set.begin(), open_set.end());
         open_set.pop_back();
 
-        if (g[s.second] > rhs[s.second]) {
-            g[s.second] = rhs[s.second];
+        if (get(g, s.second) > get(rhs, s.second)) {
+            put(g, s.second, get(rhs, s.second));
             closed_set.insert(s.second);
         }
         else {
-            g[s.second] = __FLT_MAX__;
+            put(g, s.second, __FLT_MAX__);
             ada_update_state(
                 s.second,
                 graph,
@@ -269,18 +277,19 @@ BOOST_PARAMETER_FUNCTION(
 
     using namespace boost;
 
+    BOOST_CONCEPT_ASSERT((BidirectionalGraphConcept<graph_type>));
+    BOOST_CONCEPT_ASSERT((VertexListGraphConcept<graph_type>));
+    BOOST_CONCEPT_ASSERT((Sequence<updates_type>));
+    BOOST_CONCEPT_ASSERT((ReadablePropertyMapConcept<heuristic_type, std::pair<V_TYPE(graph_type), V_TYPE(graph_type)>>));
+    BOOST_CONCEPT_ASSERT((ReadablePropertyMapConcept<weight_map_type, std::pair<V_TYPE(graph_type), V_TYPE(graph_type)>>));
+    BOOST_CONCEPT_ASSERT((Mutable_LvaluePropertyMapConcept<g_type, V_TYPE(graph_type)>));
+    BOOST_CONCEPT_ASSERT((Mutable_LvaluePropertyMapConcept<rhs_type, V_TYPE(graph_type)>));
+    BOOST_CONCEPT_ASSERT((Mutable_LvaluePropertyMapConcept<visited_type, V_TYPE(graph_type)>));
+
+
     typedef V_TYPE(graph_type) V;
     typedef E_TYPE(graph_type) E;
     typedef typename graph_traits<graph_type>::vertex_iterator VItr;
-
-    BOOST_CONCEPT_ASSERT((Sequence<updates_type>));
-    // BOOST_CONCEPT_ASSERT((ReadPropertyMapConcept<heuristic_type, std::pair<V, V>>));
-    // BOOST_CONCEPT_ASSERT((ReadPropertyMapConcept<weight_map_type, std::pair<V, V>>));
-    BOOST_CONCEPT_ASSERT((ReadWritePropertyMapConcept<g_type, V>));
-    BOOST_CONCEPT_ASSERT((ReadWritePropertyMapConcept<rhs_type, V>));
-
-    // BOOST_MPL_ASSERT((boost::is_same<typename boost::remove_const<start_type>::type, V_TYPE(graph_type)>));
-    // BOOST_MPL_ASSERT((boost::is_same<typename boost::remove_const<goal_type>::type, V_TYPE(graph_type)>));
 
     std::make_heap(open_set.begin(), open_set.end());
 
@@ -303,7 +312,10 @@ BOOST_PARAMETER_FUNCTION(
 
     // Move states from INCONS into OPEN
     for (V v : incons_set) {
-        open_set.push_back({ ada_key(g, rhs, heuristic, v, start, suboptimality), v });
+        open_set.push_back({
+            ada_key(g, rhs, heuristic, v, start, suboptimality),
+            v
+        });
         std::push_heap(open_set.begin(), open_set.end());
     }
     
@@ -344,7 +356,7 @@ inline V_TYPE(G) ada_star_next_step(
         begin,
         end,
         [&g, &weight_map, &current](V v) {
-            return weight_map[{ current, v }] + g[v];
+            return get(weight_map, { current, v }) + g[v];
         }
     );
 }
