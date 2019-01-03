@@ -21,6 +21,7 @@
 
 #include "EuclideanDistanceFunctor.h"
 #include "min_element_by.h"
+#include "map_property_map.h"
 
 BOOST_PARAMETER_NAME(graph)
 BOOST_PARAMETER_NAME(start)
@@ -55,18 +56,16 @@ struct edge_descriptor
 #define E_PTYPE(G) edge_descriptor<tag::G::_>
 
 template<typename V>
-inline boost::associative_property_map<std::map<V, float>> make_g(V start, V goal) {
-    std::map<V, float> map;
-    boost::associative_property_map<std::map<V, float>> s(map);
+inline map_property_map<V, float> make_g(V start, V goal) {
+    map_property_map<V, float> s;
     put(s, start, __FLT_MAX__);
     put(s, goal, __FLT_MAX__);
     return s;
 }
 
 template<typename V>
-inline boost::associative_property_map<std::map<V, float>> make_rhs(V start, V goal) {
-    std::map<V, float> map;
-    boost::associative_property_map<std::map<V, float>> s(map);
+inline map_property_map<V, float> make_rhs(V start, V goal) {
+    map_property_map<V, float> s;
     put(s, start, __FLT_MAX__);
     put(s, goal, 0);
     return s;
@@ -90,9 +89,8 @@ inline std::vector<std::pair<std::pair<float, float>, V>> make_open_set(
 }
 
 template<typename T>
-inline boost::associative_property_map<std::map<T, bool>> make_property_map_set() {
-    std::map<T, bool> m;
-    return boost::associative_property_map<std::map<T, bool>>(m);
+inline map_property_map<T, bool> make_property_map_set() {
+    return map_property_map<T, bool>();
 }
 
 template<typename V, typename GMap, typename RhsMap, typename Heuristic>
