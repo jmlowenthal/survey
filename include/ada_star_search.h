@@ -18,6 +18,7 @@
 #include <utility>
 #include <algorithm>
 #include <vector>
+#include <functional>
 
 #include "EuclideanDistanceFunctor.h"
 #include "min_element_by.h"
@@ -103,7 +104,7 @@ inline std::pair<float, float> ada_key(
     const float suboptimality
 ) {
     std::pair<V, V> edge(start, s);
-    if (get(g, s) < get(rhs, s)) {
+    if (get(g, s) > get(rhs, s)) {
         return {
             get(rhs, s) + suboptimality * get(heuristic, edge),
             get(rhs, s)
@@ -159,7 +160,11 @@ inline void ada_update_state(
     for (typename std::vector<std::pair<std::pair<float, float>, V>>::iterator itr = open_set.begin(); itr != open_set.end(); ++itr) {
         if (itr->second == s) {
             open_set.erase(itr);
-            std::make_heap(open_set.begin(), open_set.end());
+            std::make_heap(
+                open_set.begin(),
+                open_set.end(),
+                std::greater<std::pair<std::pair<float, float>, V>>()
+            );
             break;
         }
     }
@@ -170,7 +175,11 @@ inline void ada_update_state(
                 ada_key(g, rhs, heuristic, s, start, suboptimality),
                 s
             });
-            std::push_heap(open_set.begin(), open_set.end());
+            std::push_heap(
+                open_set.begin(),
+                open_set.end(),
+                std::greater<std::pair<std::pair<float, float>, V>>()
+            );
         }
         else {
             closed_set.insert(s);
@@ -201,10 +210,13 @@ inline void ada_compute_or_improve_path(
         open_set[0].first < ada_key(g, rhs, heuristic, start, start, suboptimality)
         || get(rhs, start) != get(g, start)
     ) {
-        //TODO minheap
         // Pop s from the min-heap
         std::pair<std::pair<float, float>, V> s = open_set[0];
-        std::pop_heap(open_set.begin(), open_set.end());
+        std::pop_heap(
+            open_set.begin(),
+            open_set.end(),
+            std::greater<std::pair<std::pair<float, float>, V>>()            
+        );
         open_set.pop_back();
 
         if (get(g, s.second) > get(rhs, s.second)) {
@@ -289,7 +301,11 @@ BOOST_PARAMETER_FUNCTION(
     typedef E_TYPE(graph_type) E;
     typedef typename graph_traits<graph_type>::vertex_iterator VItr;
 
-    std::make_heap(open_set.begin(), open_set.end());
+    std::make_heap(
+        open_set.begin(),
+        open_set.end(),
+        std::greater<std::pair<std::pair<float, float>, V>>()
+    );
 
     for (E e : updates) {
         ada_update_state(
@@ -314,7 +330,11 @@ BOOST_PARAMETER_FUNCTION(
             ada_key(g, rhs, heuristic, v, start, suboptimality),
             v
         });
-        std::push_heap(open_set.begin(), open_set.end());
+        std::push_heap(
+            open_set.begin(),
+            open_set.end(),
+            std::greater<std::pair<std::pair<float, float>, V>>()
+        );
     }
     
     closed_set.clear();
@@ -340,7 +360,7 @@ inline V_TYPE(G) ada_star_next_step(
     const G& graph,
     const V_TYPE(G) current,
     const WeightMap& weight_map,
-    const GMap& g
+    GMap& g
 ) {
     using namespace boost;
     typedef typename graph_traits<G>::vertex_descriptor V;
@@ -350,13 +370,18 @@ inline V_TYPE(G) ada_star_next_step(
 
     VItr begin, end;
     tie(begin, end) = vertices(graph);
-    return *min_element_by(
+    V best = *min_element_by(
         begin,
         end,
         [&g, &weight_map, &current](V v) {
-            return get(weight_map, { current, v }) + g[v];
+            return get(weight_map, { current, v }) + get(g, v);
         }
     );
+
+    // Don't go back to this vertex unless we get new information (and update g)
+    put(g, best, __FLT_MAX__);
+
+    return best;
 }
 
 template<typename G, typename GMap>
