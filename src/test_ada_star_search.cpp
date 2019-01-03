@@ -40,7 +40,7 @@ TEST_CASE("[ADA] Optimality", "[full]") {
 
     REQUIRE(desired.size() > 0);
 
-    map_property_map<std::map<V, float>> g_map = make_g(
+    map_property_map<V, float> g_map = make_g(
         source,
         destination
     );
