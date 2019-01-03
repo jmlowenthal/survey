@@ -3,9 +3,11 @@
 #include "simple_point.h"
 #include "EuclideanDistanceFunctor.h"
 #include <boost/graph/random.hpp>
+#include <boost/graph/circle_layout.hpp>
 #include <boost/random.hpp>
 #include <boost/graph/dijkstra_shortest_paths.hpp>
 #include <algorithm>
+#include <cmath>
 
 using namespace boost;
 typedef simple_point<float> pos;
@@ -15,7 +17,18 @@ typedef graph_traits<G>::vertex_descriptor V;
 TEST_CASE("[ADA] Optimality", "[full]") {
     random::mt11213b generator(0);
     G g;
-    generate_random_graph(g, 100, 500, generator);
+    const int N = 64;
+    const float radius = 10.0f;
+    V prev = add_vertex({ radius, 0.0f }, g);
+    for (int i = 1; i < N; ++i) {
+        V next = add_vertex({ sin((float)i / N), cos((float)i / N) }, g);
+        add_edge(prev, next, g);
+    }
+    for (int i = 0; i < 100; ++i) {
+        V u = random_vertex(g, generator);
+        V v = random_vertex(g, generator);
+        add_edge(u, v, g);
+    }
     V source = random_vertex(g, generator);
     V destination = random_vertex(g, generator);
 
