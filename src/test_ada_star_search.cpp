@@ -9,7 +9,7 @@
 
 using namespace boost;
 typedef simple_point<float> pos;
-typedef adjacency_list<vecS, vecS, directedS, pos> G;
+typedef adjacency_list<vecS, vecS, bidirectionalS, pos> G;
 typedef graph_traits<G>::vertex_descriptor V;
 
 TEST_CASE("[ADA] Optimality", "[full]") {
