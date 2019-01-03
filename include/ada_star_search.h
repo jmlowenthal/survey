@@ -366,7 +366,12 @@ inline V_TYPE(G) ada_star_next_step(
     typedef typename graph_traits<G>::vertex_descriptor V;
     typedef typename graph_traits<G>::vertex_iterator VItr;
 
-    // BOOST_CONCEPT_ASSERT();
+    BOOST_CONCEPT_ASSERT((VertexListGraphConcept<G>));
+    BOOST_CONCEPT_ASSERT((ReadablePropertyMapConcept<WeightMap, std::pair<V_TYPE(graph_type), V_TYPE(graph_type)>>));
+    BOOST_CONCEPT_ASSERT((Mutable_LvaluePropertyMapConcept<GMap, V_TYPE(graph_type)>));
+
+    // Don't go back to this vertex unless we get new information (and update g)
+    put(g, current, __FLT_MAX__);
 
     VItr begin, end;
     tie(begin, end) = vertices(graph);
@@ -377,9 +382,6 @@ inline V_TYPE(G) ada_star_next_step(
             return get(weight_map, { current, v }) + get(g, v);
         }
     );
-
-    // Don't go back to this vertex unless we get new information (and update g)
-    put(g, best, __FLT_MAX__);
 
     return best;
 }
