@@ -284,7 +284,6 @@ BOOST_PARAMETER_FUNCTION(
         (in_out(rhs), *, make_rhs<V_TYPE(graph_type)>(start, goal))
         (in_out(open_set), (std::vector<std::pair<std::pair<float, float>, V_PTYPE(graph)>>), make_open_set(g, rhs, heuristic, goal, start, suboptimality))
         (in_out(closed_set), (std::set<V_PTYPE(graph)>), std::set<V_TYPE(graph_type)>())
-        (in_out(incons_set), (std::set<V_PTYPE(graph)>), std::set<V_TYPE(graph_type)>())
         (in_out(visited), *, make_property_map_set<V_TYPE(graph_type)>())
     )
 ) {
@@ -304,6 +303,8 @@ BOOST_PARAMETER_FUNCTION(
     typedef V_TYPE(graph_type) V;
     typedef E_TYPE(graph_type) E;
     typedef typename graph_traits<graph_type>::vertex_iterator VItr;
+
+    std::set<V> incons_set;
 
     std::make_heap(
         open_set.begin(),
@@ -328,19 +329,6 @@ BOOST_PARAMETER_FUNCTION(
             visited
         );
     }
-
-    // Move states from INCONS into OPEN
-    for (V v : incons_set) {
-        open_set.push_back({
-            ada_key(g, rhs, heuristic, v, start, suboptimality),
-            v
-        });
-        std::push_heap(
-            open_set.begin(),
-            open_set.end(),
-            std::greater<std::pair<std::pair<float, float>, V>>()
-        );
-    }
     
     closed_set.clear();
 
@@ -358,6 +346,20 @@ BOOST_PARAMETER_FUNCTION(
         weight_map,
         visited
     );
+
+
+    // Move states from INCONS into OPEN
+    for (V v : incons_set) {
+        open_set.push_back({
+            ada_key(g, rhs, heuristic, v, start, suboptimality),
+            v
+        });
+        std::push_heap(
+            open_set.begin(),
+            open_set.end(),
+            std::greater<std::pair<std::pair<float, float>, V>>()
+        );
+    }
 
 }
 
