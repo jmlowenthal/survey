@@ -3,6 +3,10 @@
 
 template<typename Iter, typename Key>
 Iter min_element_by(const Iter begin, const Iter end, const Key key) {
+    if (begin == end) {
+        return end;
+    }
+    
     Iter itr = begin;
     auto best = key(*itr);
     Iter best_itr = begin;
