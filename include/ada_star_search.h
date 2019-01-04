@@ -3,30 +3,30 @@
 
 #define BOOST_PARAMETER_MAX_ARITY 20
 
-#include <boost/parameter.hpp>
-#include <boost/graph/graph_traits.hpp>
-#include <boost/concept/assert.hpp>
 #include <boost/concept_check.hpp>
-#include <boost/property_map/property_map.hpp>
-#include <boost/mpl/assert.hpp>
+#include <boost/concept/assert.hpp>
 #include <boost/graph/graph_concepts.hpp>
-#include <boost/property_map/property_map.hpp>
-#include <boost/heap/policies.hpp>
-#include <boost/heap/heap_concepts.hpp>
+#include <boost/graph/graph_traits.hpp>
 #include <boost/heap/fibonacci_heap.hpp>
+#include <boost/heap/heap_concepts.hpp>
+#include <boost/heap/policies.hpp>
+#include <boost/mpl/assert.hpp>
+#include <boost/parameter.hpp>
+#include <boost/property_map/property_map.hpp>
+#include <boost/property_map/property_map.hpp>
 #include <boost/shared_ptr.hpp>
 
-#include <map>
-#include <set>
-#include <queue>
-#include <utility>
 #include <algorithm>
-#include <vector>
 #include <functional>
+#include <map>
+#include <queue>
+#include <set>
+#include <utility>
+#include <vector>
 
 #include "EuclideanDistanceFunctor.h"
-#include "min_element_by.h"
 #include "map_property_map.h"
+#include "min_element_by.h"
 
 BOOST_PARAMETER_NAME(graph)
 BOOST_PARAMETER_NAME(start)
