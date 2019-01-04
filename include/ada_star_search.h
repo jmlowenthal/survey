@@ -11,6 +11,10 @@
 #include <boost/mpl/assert.hpp>
 #include <boost/graph/graph_concepts.hpp>
 #include <boost/property_map/property_map.hpp>
+#include <boost/heap/policies.hpp>
+#include <boost/heap/heap_concepts.hpp>
+#include <boost/heap/fibonacci_heap.hpp>
+#include <boost/shared_ptr.hpp>
 
 #include <map>
 #include <set>
@@ -56,6 +60,8 @@ struct edge_descriptor
 };
 #define E_PTYPE(G) edge_descriptor<tag::G::_>
 
+#define K_TYPE(V) std::pair<std::pair<float, float>, V>
+
 template<typename V>
 inline map_property_map<V, float> make_g(V start, V goal) {
     map_property_map<V, float> s;
@@ -73,7 +79,7 @@ inline map_property_map<V, float> make_rhs(V start, V goal) {
 }
 
 template<typename V, typename GMap, typename RhsMap, typename Heuristic>
-inline std::vector<std::pair<std::pair<float, float>, V>> make_open_set(
+inline boost::shared_ptr<boost::heap::fibonacci_heap<K_TYPE(V), boost::heap::compare<std::greater<K_TYPE(V)>>>> make_open_set(
     GMap& g,
     RhsMap& rhs,
     Heuristic heuristic,
@@ -81,12 +87,15 @@ inline std::vector<std::pair<std::pair<float, float>, V>> make_open_set(
     const V start,
     const float suboptimality
 ) {
-    std::pair<std::pair<float, float>, V> pair = std::make_pair(
+    using namespace boost;
+    using namespace boost::heap;
+    typedef fibonacci_heap<K_TYPE(V), compare<std::greater<K_TYPE(V)>>> heap;
+    shared_ptr<heap> q(new heap());
+    q->push({
         ada_key(g, rhs, heuristic, goal, start, suboptimality),
         goal
-    );
-    std::vector<std::pair<std::pair<float, float>, V>> vec = { pair };
-    return vec;
+    });
+    return q;
 }
 
 template<typename T>
@@ -123,7 +132,7 @@ inline void ada_update_state(
     const GMap& g,
     const RhsMap& rhs,
     WeightMap& weight_map,
-    OpenSet& open_set,
+    OpenSet open_set,
     std::set<V_TYPE(G)>& closed_set,
     std::set<V_TYPE(G)>& incons_set,
     const V_TYPE(G) start,
@@ -158,29 +167,19 @@ inline void ada_update_state(
     }
 
     // Remove s from open_set
-    for (typename std::vector<std::pair<std::pair<float, float>, V>>::iterator itr = open_set.begin(); itr != open_set.end(); ++itr) {
+    for (typename OpenSet::element_type::iterator itr = open_set->begin(); itr != open_set->end(); ++itr) {
         if (itr->second == s) {
-            open_set.erase(itr);
-            std::make_heap(
-                open_set.begin(),
-                open_set.end(),
-                std::greater<std::pair<std::pair<float, float>, V>>()
-            );
+            open_set->erase(OpenSet::element_type::s_handle_from_iterator(itr));
             break;
         }
     }
 
     if (get(g, s) != get(rhs, s)) {
         if (closed_set.count(s) <= 0) {
-            open_set.push_back({
+            open_set->push({
                 ada_key(g, rhs, heuristic, s, start, suboptimality),
                 s
             });
-            std::push_heap(
-                open_set.begin(),
-                open_set.end(),
-                std::greater<std::pair<std::pair<float, float>, V>>()
-            );
         }
         else {
             incons_set.insert(s);
@@ -188,13 +187,13 @@ inline void ada_update_state(
     }
 }
 
-template<typename G, typename GMap, typename RhsMap, typename Heuristic,
-    typename WeightMap, typename VisitedMap>
+template<typename G, typename GMap, typename RhsMap, typename OpenSet,
+    typename Heuristic, typename WeightMap, typename VisitedMap>
 inline void ada_compute_or_improve_path(
     const G& graph,
     GMap& g,
     RhsMap& rhs,
-    std::vector<std::pair<std::pair<float, float>, V_TYPE(G)>>& open_set,
+    OpenSet open_set,
     std::set<V_TYPE(G)>& closed_set,
     std::set<V_TYPE(G)>& incons_set,
     const V_TYPE(G) start,
@@ -209,17 +208,12 @@ inline void ada_compute_or_improve_path(
     typedef typename graph_traits<G>::vertex_iterator VItr;
 
     while (
-        open_set[0].first < ada_key(g, rhs, heuristic, start, start, suboptimality)
+        open_set->top().first < ada_key(g, rhs, heuristic, start, start, suboptimality)
         || get(rhs, start) != get(g, start)
     ) {
         // Pop s from the min-heap
-        std::pair<std::pair<float, float>, V> s = open_set[0];
-        std::pop_heap(
-            open_set.begin(),
-            open_set.end(),
-            std::greater<std::pair<std::pair<float, float>, V>>()            
-        );
-        open_set.pop_back();
+        std::pair<std::pair<float, float>, V> s = open_set->top();
+        open_set->pop();
 
         if (get(g, s.second) > get(rhs, s.second)) {
             put(g, s.second, get(rhs, s.second));
@@ -282,13 +276,14 @@ BOOST_PARAMETER_FUNCTION(
         (suboptimality, (const float), 1.0f)
         (in_out(g), *, make_g<V_TYPE(graph_type)>(start, goal))
         (in_out(rhs), *, make_rhs<V_TYPE(graph_type)>(start, goal))
-        (in_out(open_set), (std::vector<std::pair<std::pair<float, float>, V_PTYPE(graph)>>), make_open_set(g, rhs, heuristic, goal, start, suboptimality))
+        (in_out(open_set), *, make_open_set(g, rhs, heuristic, goal, start, suboptimality))
         (in_out(closed_set), (std::set<V_PTYPE(graph)>), std::set<V_TYPE(graph_type)>())
         (in_out(visited), *, make_property_map_set<V_TYPE(graph_type)>())
     )
 ) {
 
     using namespace boost;
+    using namespace boost::heap;
 
     BOOST_CONCEPT_ASSERT((BidirectionalGraphConcept<graph_type>));
     BOOST_CONCEPT_ASSERT((VertexListGraphConcept<graph_type>));
@@ -298,19 +293,13 @@ BOOST_PARAMETER_FUNCTION(
     BOOST_CONCEPT_ASSERT((Mutable_LvaluePropertyMapConcept<g_type, V_TYPE(graph_type)>));
     BOOST_CONCEPT_ASSERT((Mutable_LvaluePropertyMapConcept<rhs_type, V_TYPE(graph_type)>));
     BOOST_CONCEPT_ASSERT((Mutable_LvaluePropertyMapConcept<visited_type, V_TYPE(graph_type)>));
-
+    BOOST_CONCEPT_ASSERT((MutablePriorityQueue<typename open_set_type::element_type>));
 
     typedef V_TYPE(graph_type) V;
     typedef E_TYPE(graph_type) E;
     typedef typename graph_traits<graph_type>::vertex_iterator VItr;
 
     std::set<V> incons_set;
-
-    std::make_heap(
-        open_set.begin(),
-        open_set.end(),
-        std::greater<std::pair<std::pair<float, float>, V>>()
-    );
 
     for (E e : updates) {
         ada_update_state(
@@ -330,6 +319,17 @@ BOOST_PARAMETER_FUNCTION(
         );
     }
     
+    // Update priorities
+    for (typename open_set_type::element_type::iterator itr = open_set->begin(); itr != open_set->end(); ++itr) {
+        open_set->update(
+            open_set_type::element_type::s_handle_from_iterator(itr),
+            {
+                ada_key(g, rhs, heuristic, itr->second, start, suboptimality),
+                itr->second
+            }
+        );
+    }
+
     closed_set.clear();
 
     ada_compute_or_improve_path(
@@ -350,15 +350,10 @@ BOOST_PARAMETER_FUNCTION(
 
     // Move states from INCONS into OPEN
     for (V v : incons_set) {
-        open_set.push_back({
+        open_set->push({
             ada_key(g, rhs, heuristic, v, start, suboptimality),
             v
         });
-        std::push_heap(
-            open_set.begin(),
-            open_set.end(),
-            std::greater<std::pair<std::pair<float, float>, V>>()
-        );
     }
 
 }
