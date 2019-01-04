@@ -3,6 +3,7 @@
 
 #define BOOST_PARAMETER_MAX_ARITY 20
 
+#include <boost/assert.hpp>
 #include <boost/concept_check.hpp>
 #include <boost/concept/assert.hpp>
 #include <boost/graph/graph_concepts.hpp>
@@ -145,7 +146,7 @@ inline void ada_update_state(
     typedef typename graph_traits<G>::vertex_descriptor V;
 
     // If s was not visited before
-    if (get(visited, s)) {
+    if (!get(visited, s)) {
         put(visited, s, true);
         put(g, s, __FLT_MAX__);
     }
@@ -207,22 +208,34 @@ inline void ada_compute_or_improve_path(
     typedef V_TYPE(G) V;
     typedef typename graph_traits<G>::vertex_iterator VItr;
 
+    std::pair<float, float> key_start =
+        ada_key(g, rhs, heuristic, start, start, suboptimality);
+
     while (
-        open_set->top().first < ada_key(g, rhs, heuristic, start, start, suboptimality)
-        || get(rhs, start) != get(g, start)
+        !open_set->empty() && (
+            open_set->top().first < key_start
+            || get(rhs, start) != get(g, start)
+        )
     ) {
         // Pop s from the min-heap
-        std::pair<std::pair<float, float>, V> s = open_set->top();
+        V s = open_set->top().second;
         open_set->pop();
 
-        if (get(g, s.second) > get(rhs, s.second)) {
-            put(g, s.second, get(rhs, s.second));
-            closed_set.insert(s.second);
+        bool update_s = false;
+        if (get(g, s) > get(rhs, s)) {
+            put(g, s, get(rhs, s));
+            closed_set.insert(s);
         }
         else {
-            put(g, s.second, __FLT_MAX__);
+            put(g, s, __FLT_MAX__);
+            update_s = true;
+        }
+        
+        typedef typename graph_traits<G>::in_edge_iterator EItr;
+        EItr i, end;
+        for (tie(i, end) = in_edges(s, graph); i != end; ++i) {
             ada_update_state(
-                s.second,
+                source(*i, graph),
                 graph,
                 g,
                 rhs,
@@ -237,12 +250,9 @@ inline void ada_compute_or_improve_path(
                 visited
             );
         }
-        
-        typedef typename graph_traits<G>::in_edge_iterator EItr;
-        EItr i, end;
-        for (tie(i, end) = in_edges(s.second, graph); i != end; ++i) {
+        if (update_s) {
             ada_update_state(
-                source(*i, graph),
+                s,
                 graph,
                 g,
                 rhs,
@@ -320,7 +330,12 @@ BOOST_PARAMETER_FUNCTION(
     }
     
     // Update priorities
-    for (typename open_set_type::element_type::iterator itr = open_set->begin(); itr != open_set->end(); ++itr) {
+    std::vector<typename open_set_type::element_type::iterator> itrs;
+    for (auto itr = open_set->begin(); itr != open_set->end(); ++itr) {
+        itrs.push_back(itr);
+    }
+    
+    for (typename open_set_type::element_type::iterator itr : itrs) {
         open_set->update(
             open_set_type::element_type::s_handle_from_iterator(itr),
             {
@@ -367,26 +382,30 @@ inline V_TYPE(G) ada_star_next_step(
 ) {
     using namespace boost;
     typedef typename graph_traits<G>::vertex_descriptor V;
-    typedef typename graph_traits<G>::vertex_iterator VItr;
+    typedef typename graph_traits<G>::edge_descriptor E;
+    typedef typename graph_traits<G>::out_edge_iterator EItr;
 
-    BOOST_CONCEPT_ASSERT((VertexListGraphConcept<G>));
+    BOOST_CONCEPT_ASSERT((IncidenceGraphConcept<G>));
     BOOST_CONCEPT_ASSERT((ReadablePropertyMapConcept<WeightMap, std::pair<V_TYPE(G), V_TYPE(G)>>));
     BOOST_CONCEPT_ASSERT((Mutable_LvaluePropertyMapConcept<GMap, V_TYPE(G)>));
 
     // Don't go back to this vertex unless we get new information (and update g)
     put(g, current, __FLT_MAX__);
 
-    VItr begin, end;
-    tie(begin, end) = vertices(graph);
-    V best = *min_element_by(
+    EItr begin, end;
+    tie(begin, end) = out_edges(current, graph);
+    EItr best = min_element_by(
         begin,
         end,
-        [&g, &weight_map, &current](V v) {
+        [&graph, &g, &weight_map, &current](E e) {
+            V v = target(e, graph);
             return get(weight_map, { current, v }) + get(g, v);
         }
     );
 
-    return best;
+    BOOST_ASSERT_MSG(best != end, "You have reached a dead-end.");
+
+    return target(*best, graph);
 }
 
 template<typename G, typename GMap>
