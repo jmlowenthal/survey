@@ -125,6 +125,7 @@ inline void ada_update_state(
     WeightMap& weight_map,
     OpenSet& open_set,
     std::set<V_TYPE(G)>& closed_set,
+    std::set<V_TYPE(G)>& incons_set,
     const V_TYPE(G) start,
     const V_TYPE(G) goal,
     Heuristic heuristic,
@@ -182,7 +183,7 @@ inline void ada_update_state(
             );
         }
         else {
-            closed_set.insert(s);
+            incons_set.insert(s);
         }
     }
 }
@@ -195,6 +196,7 @@ inline void ada_compute_or_improve_path(
     RhsMap& rhs,
     std::vector<std::pair<std::pair<float, float>, V_TYPE(G)>>& open_set,
     std::set<V_TYPE(G)>& closed_set,
+    std::set<V_TYPE(G)>& incons_set,
     const V_TYPE(G) start,
     const V_TYPE(G) goal,
     Heuristic heuristic,
@@ -233,6 +235,7 @@ inline void ada_compute_or_improve_path(
                 weight_map,
                 open_set,
                 closed_set,
+                incons_set,
                 start,
                 goal,
                 heuristic,
@@ -252,6 +255,7 @@ inline void ada_compute_or_improve_path(
                 weight_map,
                 open_set,
                 closed_set,
+                incons_set,
                 start,
                 goal,
                 heuristic,
@@ -316,6 +320,7 @@ BOOST_PARAMETER_FUNCTION(
             weight_map,
             open_set,
             closed_set,
+            incons_set,
             start,
             goal,
             heuristic,
@@ -345,6 +350,7 @@ BOOST_PARAMETER_FUNCTION(
         rhs,
         open_set,
         closed_set,
+        incons_set,
         start,
         goal,
         heuristic,
