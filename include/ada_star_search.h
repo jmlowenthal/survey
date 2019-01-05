@@ -287,7 +287,6 @@ BOOST_PARAMETER_FUNCTION(
         (in_out(g), *, make_g<V_TYPE(graph_type)>(start, goal))
         (in_out(rhs), *, make_rhs<V_TYPE(graph_type)>(start, goal))
         (in_out(open_set), *, make_open_set(g, rhs, heuristic, goal, start, suboptimality))
-        (in_out(closed_set), (std::set<V_PTYPE(graph)>), std::set<V_TYPE(graph_type)>())
         (in_out(visited), *, make_property_map_set<V_TYPE(graph_type)>())
     )
 ) {
@@ -310,7 +309,39 @@ BOOST_PARAMETER_FUNCTION(
     typedef typename graph_traits<graph_type>::vertex_iterator VItr;
 
     std::set<V> incons_set;
+    std::set<V> closed_set;
+    
+    // Update priorities
+    std::vector<typename open_set_type::element_type::iterator> itrs;
+    for (auto itr = open_set->begin(); itr != open_set->end(); ++itr) {
+        itrs.push_back(itr);
+    }
+    for (typename open_set_type::element_type::iterator itr : itrs) {
+        open_set->update(
+            open_set_type::element_type::s_handle_from_iterator(itr),
+            {
+                ada_key(g, rhs, heuristic, itr->second, start, suboptimality),
+                itr->second
+            }
+        );
+    }
 
+    ada_compute_or_improve_path(
+        graph,
+        g,
+        rhs,
+        open_set,
+        closed_set,
+        incons_set,
+        start,
+        goal,
+        heuristic,
+        suboptimality,
+        weight_map,
+        visited
+    );
+
+    // Apply updates
     for (E e : updates) {
         ada_update_state(
             source(e, graph),
@@ -328,40 +359,6 @@ BOOST_PARAMETER_FUNCTION(
             visited
         );
     }
-    
-    // Update priorities
-    std::vector<typename open_set_type::element_type::iterator> itrs;
-    for (auto itr = open_set->begin(); itr != open_set->end(); ++itr) {
-        itrs.push_back(itr);
-    }
-    
-    for (typename open_set_type::element_type::iterator itr : itrs) {
-        open_set->update(
-            open_set_type::element_type::s_handle_from_iterator(itr),
-            {
-                ada_key(g, rhs, heuristic, itr->second, start, suboptimality),
-                itr->second
-            }
-        );
-    }
-
-    closed_set.clear();
-
-    ada_compute_or_improve_path(
-        graph,
-        g,
-        rhs,
-        open_set,
-        closed_set,
-        incons_set,
-        start,
-        goal,
-        heuristic,
-        suboptimality,
-        weight_map,
-        visited
-    );
-
 
     // Move states from INCONS into OPEN
     for (V v : incons_set) {
