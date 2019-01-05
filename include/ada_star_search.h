@@ -18,6 +18,7 @@
 #include <boost/shared_ptr.hpp>
 
 #include <algorithm>
+#include <cmath>
 #include <functional>
 #include <map>
 #include <queue>
@@ -66,15 +67,15 @@ struct edge_descriptor
 template<typename V>
 inline map_property_map<V, float> make_g(V start, V goal) {
     map_property_map<V, float> s;
-    put(s, start, __FLT_MAX__);
-    put(s, goal, __FLT_MAX__);
+    put(s, start, INFINITY);
+    put(s, goal, INFINITY);
     return s;
 }
 
 template<typename V>
 inline map_property_map<V, float> make_rhs(V start, V goal) {
     map_property_map<V, float> s;
-    put(s, start, __FLT_MAX__);
+    put(s, start, INFINITY);
     put(s, goal, 0);
     return s;
 }
@@ -148,12 +149,12 @@ inline void ada_update_state(
     // If s was not visited before
     if (!get(visited, s)) {
         put(visited, s, true);
-        put(g, s, __FLT_MAX__);
+        put(g, s, INFINITY);
     }
 
     // If s != goal, update rhs
     if (s != goal) {
-        float bd = __FLT_MAX__;
+        float bd = INFINITY;
         typedef typename graph_traits<G>::out_edge_iterator EItr;
         EItr i, end;
         for (tie(i, end) = out_edges(s, graph); i != end; ++i) {
@@ -227,7 +228,7 @@ inline void ada_compute_or_improve_path(
             closed_set.insert(s);
         }
         else {
-            put(g, s, __FLT_MAX__);
+            put(g, s, INFINITY);
             update_s = true;
         }
         
@@ -387,7 +388,7 @@ inline V_TYPE(G) ada_star_next_step(
     BOOST_CONCEPT_ASSERT((Mutable_LvaluePropertyMapConcept<GMap, V_TYPE(G)>));
 
     // Don't go back to this vertex unless we get new information (and update g)
-    put(g, current, __FLT_MAX__);
+    put(g, current, INFINITY);
 
     EItr begin, end;
     tie(begin, end) = out_edges(current, graph);
