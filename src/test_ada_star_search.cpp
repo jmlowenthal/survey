@@ -5,7 +5,7 @@
 #include <boost/graph/random.hpp>
 #include <boost/graph/circle_layout.hpp>
 #include <boost/random.hpp>
-#include <boost/graph/dijkstra_shortest_paths.hpp>
+#include <boost/graph/astar_search.hpp>
 #include <algorithm>
 #include <cmath>
 
@@ -19,7 +19,7 @@ TEST_CASE("[ADA] Path tests", "[full]") {
     // Generate graph
     random::mt11213b generator(0);
     G g;
-    const int N = 1000;
+    const int N = 10000;
     const float radius = 10.0f;
     V prev = add_vertex({ 0.0f, radius }, g);
     for (int i = 1; i < N; ++i) {
@@ -29,7 +29,7 @@ TEST_CASE("[ADA] Path tests", "[full]") {
         add_edge(prev, next, g);
         prev = next;
     }
-    for (int i = 0; i < 1000; ++i) {
+    for (int i = 0; i < 10900; ++i) {
         V u = random_vertex(g, generator);
         V v = random_vertex(g, generator);
         add_edge(u, v, g);
@@ -43,21 +43,27 @@ TEST_CASE("[ADA] Path tests", "[full]") {
     // Build optimal solution
     std::map<V, V> pred_map_map;
     associative_property_map<std::map<V, V>> pred_map(pred_map_map);
-    dijkstra_shortest_paths(
-        g,
-        source,
-        predecessor_map(pred_map).
-        weight_map(weight_map)
-    );
-    
+
     std::vector<V> desired;
-    V current = destination;
-    while (current != source) {
+    BENCHMARK("Baseline A*") {
+        astar_search(
+            g,
+            source,
+            [&weight_map, &destination](V v){
+                return weight_map[{ v, destination }];
+            },
+            predecessor_map(pred_map).
+            weight_map(weight_map)
+        );
+        
+        V current = destination;
+        while (current != source) {
+            desired.push_back(current);
+            current = pred_map[current];
+        }
         desired.push_back(current);
-        current = pred_map[current];
+        std::reverse(desired.begin(), desired.end());
     }
-    desired.push_back(current);
-    std::reverse(desired.begin(), desired.end());
 
     float desiredLength = 0.0f;
     for (int i = 0; i + 1 < desired.size(); ++i) {
@@ -66,26 +72,29 @@ TEST_CASE("[ADA] Path tests", "[full]") {
 
     SECTION("Optimal") {
         map_property_map<V, float> g_map = make_g(source, destination);
-        ada_star_search(
-            g,
-            source,
-            destination,
-            _weight_map=weight_map,
-            _g=g_map
-        );
-
+        
         std::vector<V> solution;
-        current = source;
-        while (current != destination) {
-            solution.push_back(current);
-            current = ada_star_next_step(
+        BENCHMARK("Optimal path") {
+            ada_star_search(
                 g,
-                current,
-                weight_map,
-                g_map
+                source,
+                destination,
+                _weight_map=weight_map,
+                _g=g_map
             );
+
+            V current = source;
+            while (current != destination) {
+                solution.push_back(current);
+                current = ada_star_next_step(
+                    g,
+                    current,
+                    weight_map,
+                    g_map
+                );
+            }
+            solution.push_back(current);
         }
-        solution.push_back(current);
 
         REQUIRE(solution.size() > 0);
 
@@ -99,27 +108,30 @@ TEST_CASE("[ADA] Path tests", "[full]") {
 
     SECTION("Suboptimal (ε = 1.5)") {
         map_property_map<V, float> g_map = make_g(source, destination);
-        ada_star_search(
-            g,
-            source,
-            destination,
-            _weight_map=weight_map,
-            _g=g_map,
-            _suboptimality=1.5f
-        );
 
         std::vector<V> solution;
-        current = source;
-        while (current != destination) {
-            solution.push_back(current);
-            current = ada_star_next_step(
+        BENCHMARK("Suboptimal path") {
+            ada_star_search(
                 g,
-                current,
-                weight_map,
-                g_map
+                source,
+                destination,
+                _weight_map=weight_map,
+                _g=g_map,
+                _suboptimality=1.5f
             );
+
+            V current = source;
+            while (current != destination) {
+                solution.push_back(current);
+                current = ada_star_next_step(
+                    g,
+                    current,
+                    weight_map,
+                    g_map
+                );
+            }
+            solution.push_back(current);
         }
-        solution.push_back(current);
 
         REQUIRE(solution.size() > 0);
 
