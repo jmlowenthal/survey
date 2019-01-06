@@ -29,7 +29,7 @@ TEST_CASE("[ADA] Path tests", "[full]") {
         add_edge(prev, next, g);
         prev = next;
     }
-    for (int i = 0; i < 10900; ++i) {
+    for (int i = 0; i < 1000; ++i) {
         V u = random_vertex(g, generator);
         V v = random_vertex(g, generator);
         add_edge(u, v, g);
