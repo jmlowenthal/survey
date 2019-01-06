@@ -66,7 +66,7 @@ struct edge_descriptor
 
 template<typename V>
 inline map_property_map<V, float> make_g(V start, V goal) {
-    map_property_map<V, float> s;
+    map_property_map<V, float> s(INFINITY);
     put(s, start, INFINITY);
     put(s, goal, INFINITY);
     return s;
@@ -74,7 +74,7 @@ inline map_property_map<V, float> make_g(V start, V goal) {
 
 template<typename V>
 inline map_property_map<V, float> make_rhs(V start, V goal) {
-    map_property_map<V, float> s;
+    map_property_map<V, float> s(INFINITY);
     put(s, start, INFINITY);
     put(s, goal, 0);
     return s;
@@ -100,9 +100,12 @@ inline boost::shared_ptr<boost::heap::fibonacci_heap<K_TYPE(V), boost::heap::com
     return q;
 }
 
-template<typename T>
-inline map_property_map<T, bool> make_property_map_set() {
-    return map_property_map<T, bool>();
+template<typename V>
+inline map_property_map<V, bool> make_visited(V start, V goal) {
+    map_property_map<V, bool> m(false);
+    put(m, start, true);
+    put(m, goal, true);
+    return m;
 }
 
 template<typename V, typename GMap, typename RhsMap, typename Heuristic>
@@ -288,7 +291,7 @@ BOOST_PARAMETER_FUNCTION(
         (in_out(g), *, make_g<V_TYPE(graph_type)>(start, goal))
         (in_out(rhs), *, make_rhs<V_TYPE(graph_type)>(start, goal))
         (in_out(open_set), *, make_open_set(g, rhs, heuristic, goal, start, suboptimality))
-        (in_out(visited), *, make_property_map_set<V_TYPE(graph_type)>())
+        (in_out(visited), *, make_visited<V_TYPE(graph_type)>(start, goal))
     )
 ) {
 
@@ -397,7 +400,9 @@ inline V_TYPE(G) ada_star_next_step(
         end,
         [&graph, &g, &weight_map, &current](E e) {
             V v = target(e, graph);
-            return get(weight_map, { current, v }) + get(g, v);
+            float w = get(weight_map, { current, v });
+            float gv = get(g, v);
+            return w + gv;
         }
     );
 
