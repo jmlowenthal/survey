@@ -417,7 +417,7 @@ inline V_TYPE(G) ada_star_next_step(
     const V_TYPE(G) current,
     const GMap& g
 ) {
-    ada_star_next_step(
+    return ada_star_next_step(
         graph,
         current,
         EuclideanDistanceFunctor<G, float>(graph),
