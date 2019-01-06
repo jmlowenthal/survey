@@ -10,3 +10,4 @@ build/
 DartConfiguration.tcl
 planner
 tests
+*.out*
