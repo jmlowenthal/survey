@@ -2,17 +2,19 @@
 #define FUNCTIONAL_GRAPH_H
 
 #include <utility>
+#include <functional>
+
 #include <boost/graph/graph_traits.hpp>
 #include <boost/shared_container_iterator.hpp>
 #include <boost/concept_check.hpp>
-#include <functional>
+#include <boost/shared_ptr.hpp>
 
 template<typename V, typename Container = std::vector<std::pair<V, V>>,
     typename ExpanderFunc = std::function<Container(V)>>
 struct functional_graph {
 
-    typedef typename V vertex_descriptor;
-    typedef std::pair<typename V, typename V> edge_descriptor;
+    typedef V vertex_descriptor;
+    typedef std::pair<V, V> edge_descriptor;
     typedef boost::directed_tag directed_category;
     typedef boost::disallow_parallel_edge_tag edge_parallel_category;
     typedef boost::bidirectional_graph_tag traversal_category;
@@ -30,41 +32,39 @@ struct functional_graph {
 
 };
 
-namespace boost {
-
-template<typename V, typename EF, typename C>
-std::pair<typename functional_graph<V, EF, C>::out_edge_iterator, 
-    typename functional_graph<V, EF, C>::out_edge_iterator>
+template<typename V, typename C, typename EF>
+std::pair<typename functional_graph<V, C, EF>::out_edge_iterator, 
+    typename functional_graph<V, C, EF>::out_edge_iterator>
 out_edges(
-    typename functional_graph<V, EF, C>::vertex_descriptor v,
-    functional_graph<V, EF, C> g
+    typename functional_graph<V, C, EF>::vertex_descriptor& v,
+    const functional_graph<V, C, EF>& g
 ) {
-    shared_ptr<C> p(new C(g.succ(v)));
+    boost::shared_ptr<C> p(new C(g.succ(v)));
     return make_shared_container_range(p);
 }
 
-template<typename V, typename EF, typename C>
-typename functional_graph<V, EF, C>::vertex_descriptor source(
-    typename functional_graph<V, EF, C>::edge_descriptor e,
-    functional_graph<V, EF, C> g
+template<typename V, typename C, typename EF>
+typename functional_graph<V, C, EF>::vertex_descriptor source(
+    typename functional_graph<V, C, EF>::edge_descriptor& e,
+    const functional_graph<V, C, EF>& g
 ) {
     return e.first;
 }
 
-template<typename V, typename EF, typename C>
-typename functional_graph<V, EF, C>::vertex_descriptor target(
-    typename functional_graph<V, EF, C>::edge_descriptor e,
-    functional_graph<V, EF, C> g
+template<typename V, typename C, typename EF>
+typename functional_graph<V, C, EF>::vertex_descriptor target(
+    typename functional_graph<V, C, EF>::edge_descriptor& e,
+    const functional_graph<V, C, EF>& g
 ) {
     return e.second;
 }
 
-template<typename V, typename EF, typename C>
-typename functional_graph<V, EF, C>::vertex_descriptor out_degree(
-    typename functional_graph<V, EF, C>::vertex_descriptor v,
-    functional_graph<V, EF, C> g
+template<typename V, typename C, typename EF>
+typename functional_graph<V, C, EF>::vertex_descriptor out_degree(
+    typename functional_graph<V, C, EF>::vertex_descriptor& v,
+    const functional_graph<V, C, EF>& g
 ) {
-    typename functional_graph<V, EF, C>::out_edge_iterator itr, end;
+    typename functional_graph<V, C, EF>::out_edge_iterator itr, end;
     int count = 0;
     for (tie(itr, end) = out_edges(v, g); itr != end; ++itr) {
         ++count;
@@ -72,23 +72,24 @@ typename functional_graph<V, EF, C>::vertex_descriptor out_degree(
     return count;
 }
 
-template<typename V, typename EF, typename C>
-std::pair<typename functional_graph<V, EF, C>::out_edge_iterator, 
-    typename functional_graph<V, EF, C>::out_edge_iterator>
+template<typename V, typename C, typename EF>
+std::pair<typename functional_graph<V, C, EF>::out_edge_iterator, 
+    typename functional_graph<V, C, EF>::out_edge_iterator>
 in_edges(
-    typename functional_graph<V, EF, C>::vertex_descriptor v,
-    functional_graph<V, EF, C> g
+    typename functional_graph<V, C, EF>::vertex_descriptor& v,
+    const functional_graph<V, C, EF>& g
 ) {
-    shared_ptr<C> p(new C(g.pred(v)));
+    auto l = g.pred(v);
+    boost::shared_ptr<C> p(new C(l));
     return make_shared_container_range(p);
 }
 
-template<typename V, typename EF, typename C>
-typename functional_graph<V, EF, C>::vertex_descriptor in_degree(
-    typename functional_graph<V, EF, C>::vertex_descriptor v,
-    functional_graph<V, EF, C> g
+template<typename V, typename C, typename EF>
+typename functional_graph<V, C, EF>::vertex_descriptor in_degree(
+    typename functional_graph<V, C, EF>::vertex_descriptor& v,
+    const functional_graph<V, C, EF>& g
 ) {
-    typename functional_graph<V, EF, C>::in_edge_iterator itr, end;
+    typename functional_graph<V, C, EF>::in_edge_iterator itr, end;
     int count = 0;
     for (tie(itr, end) = in_edges(v, g); itr != end; ++itr) {
         ++count;
@@ -96,14 +97,12 @@ typename functional_graph<V, EF, C>::vertex_descriptor in_degree(
     return count;
 }
 
-template<typename V, typename EF, typename C>
-typename functional_graph<V, EF, C>::vertex_descriptor degree(
-    typename functional_graph<V, EF, C>::vertex_descriptor v,
-    functional_graph<V, EF, C> g
+template<typename V, typename C, typename EF>
+typename functional_graph<V, C, EF>::vertex_descriptor degree(
+    typename functional_graph<V, C, EF>::vertex_descriptor& v,
+    const functional_graph<V, C, EF>& g
 ) {
     return in_degree(v, g) + out_degree(v, g);
 }
-
-} // namespace boost
 
 #endif
