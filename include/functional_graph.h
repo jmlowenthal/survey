@@ -44,22 +44,6 @@ out_edges(
 }
 
 template<typename V, typename C, typename EF>
-typename functional_graph<V, C, EF>::vertex_descriptor source(
-    typename functional_graph<V, C, EF>::edge_descriptor& e,
-    const functional_graph<V, C, EF>& g
-) {
-    return e.first;
-}
-
-template<typename V, typename C, typename EF>
-typename functional_graph<V, C, EF>::vertex_descriptor target(
-    typename functional_graph<V, C, EF>::edge_descriptor& e,
-    const functional_graph<V, C, EF>& g
-) {
-    return e.second;
-}
-
-template<typename V, typename C, typename EF>
 typename functional_graph<V, C, EF>::vertex_descriptor out_degree(
     typename functional_graph<V, C, EF>::vertex_descriptor& v,
     const functional_graph<V, C, EF>& g
