@@ -13,8 +13,19 @@ template<typename V, typename Container = std::vector<std::pair<V, V>>,
     typename ExpanderFunc = std::function<Container(V)>>
 struct functional_graph {
 
+private:
+
+    struct edge {
+        V source, target;
+        bool operator==(edge other) {
+            return source == other.source && target == other.target;
+        }
+    };
+
+public: 
+
     typedef V vertex_descriptor;
-    typedef std::pair<V, V> edge_descriptor;
+    typedef edge edge_descriptor;
     typedef boost::directed_tag directed_category;
     typedef boost::disallow_parallel_edge_tag edge_parallel_category;
     typedef boost::bidirectional_graph_tag traversal_category;
@@ -48,7 +59,7 @@ typename functional_graph<V, C, EF>::vertex_descriptor source(
     typename functional_graph<V, C, EF>::edge_descriptor& e,
     const functional_graph<V, C, EF>& g
 ) {
-    return e.first;
+    return e.source;
 }
 
 template<typename V, typename C, typename EF>
@@ -56,7 +67,7 @@ typename functional_graph<V, C, EF>::vertex_descriptor target(
     typename functional_graph<V, C, EF>::edge_descriptor& e,
     const functional_graph<V, C, EF>& g
 ) {
-    return e.second;
+    return e.target;
 }
 
 template<typename V, typename C, typename EF>
