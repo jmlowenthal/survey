@@ -49,7 +49,7 @@ add_executable(
 )
 target_link_libraries(tests ${Boost_LIBRARIES})
 
-set(CMAKE_MODULE_PATH lib/catch2/cmake/)
+set(CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/lib/catch2/cmake/)
 include(CTest)
 include(Catch)
 catch_discover_tests(tests)
