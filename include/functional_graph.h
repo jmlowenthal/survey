@@ -8,24 +8,26 @@
 #include <boost/shared_container_iterator.hpp>
 #include <boost/concept_check.hpp>
 #include <boost/shared_ptr.hpp>
+#include <boost/pending/property.hpp>
+#include <boost/assert.hpp>
 
-template<typename V, typename Container = std::vector<std::pair<V, V>>,
+template<typename V>
+struct edge {
+    V source, target;
+    inline bool operator==(const edge& other) const {
+        return source == other.source && target == other.target;
+    }
+    inline bool operator!=(const edge& other) const {
+        return !(*this == other);
+    }
+};
+
+template<typename V, typename Container = std::vector<edge<V>>,
     typename ExpanderFunc = std::function<Container(V)>>
 struct functional_graph {
 
-private:
-
-    struct edge {
-        V source, target;
-        bool operator==(edge other) {
-            return source == other.source && target == other.target;
-        }
-    };
-
-public: 
-
     typedef V vertex_descriptor;
-    typedef edge edge_descriptor;
+    typedef edge<V> edge_descriptor;
     typedef boost::directed_tag directed_category;
     typedef boost::disallow_parallel_edge_tag edge_parallel_category;
     typedef boost::bidirectional_graph_tag traversal_category;
@@ -39,7 +41,22 @@ public:
     BOOST_CONCEPT_ASSERT((boost::UnaryFunctionConcept<ExpanderFunc, Container, V>));
     BOOST_CONCEPT_ASSERT((boost::ForwardContainerConcept<Container>));
 
-    functional_graph(ExpanderFunc p, ExpanderFunc s) : pred(p), succ(s) {};
+    functional_graph(ExpanderFunc p, ExpanderFunc s) : pred(p), succ(s) {
+        #if !defined(BOOST_IS_VOID) && !defined(UNSAFE_FUNCTION_GRAPH)
+            out_edge_iterator itr, end;
+            V origin;
+            for (tie(itr, end) = out_edges(origin, *this); itr != end; ++itr) {
+                in_edge_iterator in_begin, in_end;
+                V dst = target(*itr, *this);
+                tie(in_begin, in_end) = in_edges(dst, *this);
+                edge_descriptor edge = {dst, origin};
+                BOOST_ASSERT_MSG(
+                    std::find(in_begin, in_end, edge) != in_end,
+                    "Predecessor function is not inverse of successor"
+                );
+            }
+        #endif
+    };
 
 };
 
@@ -71,7 +88,7 @@ typename functional_graph<V, C, EF>::vertex_descriptor target(
 }
 
 template<typename V, typename C, typename EF>
-typename functional_graph<V, C, EF>::vertex_descriptor out_degree(
+typename functional_graph<V, C, EF>::degree_size_type out_degree(
     typename functional_graph<V, C, EF>::vertex_descriptor& v,
     const functional_graph<V, C, EF>& g
 ) {
@@ -84,8 +101,8 @@ typename functional_graph<V, C, EF>::vertex_descriptor out_degree(
 }
 
 template<typename V, typename C, typename EF>
-std::pair<typename functional_graph<V, C, EF>::out_edge_iterator, 
-    typename functional_graph<V, C, EF>::out_edge_iterator>
+std::pair<typename functional_graph<V, C, EF>::in_edge_iterator, 
+    typename functional_graph<V, C, EF>::in_edge_iterator>
 in_edges(
     typename functional_graph<V, C, EF>::vertex_descriptor& v,
     const functional_graph<V, C, EF>& g
@@ -96,7 +113,7 @@ in_edges(
 }
 
 template<typename V, typename C, typename EF>
-typename functional_graph<V, C, EF>::vertex_descriptor in_degree(
+typename functional_graph<V, C, EF>::degree_size_type in_degree(
     typename functional_graph<V, C, EF>::vertex_descriptor& v,
     const functional_graph<V, C, EF>& g
 ) {
@@ -109,7 +126,7 @@ typename functional_graph<V, C, EF>::vertex_descriptor in_degree(
 }
 
 template<typename V, typename C, typename EF>
-typename functional_graph<V, C, EF>::vertex_descriptor degree(
+typename functional_graph<V, C, EF>::degree_size_type degree(
     typename functional_graph<V, C, EF>::vertex_descriptor& v,
     const functional_graph<V, C, EF>& g
 ) {
