@@ -3,6 +3,7 @@
 
 #include <boost/graph/graph_traits.hpp>
 #include <boost/graph/simple_point.hpp>
+#include <boost/property_map/property_map.hpp>
 
 template<typename Graph, typename T>
 class EuclideanDistanceFunctor {
