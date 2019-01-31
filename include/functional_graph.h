@@ -64,7 +64,7 @@ template<typename V, typename C, typename EF>
 std::pair<typename functional_graph<V, C, EF>::out_edge_iterator, 
     typename functional_graph<V, C, EF>::out_edge_iterator>
 out_edges(
-    typename functional_graph<V, C, EF>::vertex_descriptor& v,
+    const typename functional_graph<V, C, EF>::vertex_descriptor& v,
     const functional_graph<V, C, EF>& g
 ) {
     boost::shared_ptr<C> p(new C(g.succ(v)));
@@ -73,7 +73,7 @@ out_edges(
 
 template<typename V, typename C, typename EF>
 typename functional_graph<V, C, EF>::vertex_descriptor source(
-    typename functional_graph<V, C, EF>::edge_descriptor& e,
+    const typename functional_graph<V, C, EF>::edge_descriptor& e,
     const functional_graph<V, C, EF>& g
 ) {
     return e.source;
@@ -81,7 +81,7 @@ typename functional_graph<V, C, EF>::vertex_descriptor source(
 
 template<typename V, typename C, typename EF>
 typename functional_graph<V, C, EF>::vertex_descriptor target(
-    typename functional_graph<V, C, EF>::edge_descriptor& e,
+    const typename functional_graph<V, C, EF>::edge_descriptor& e,
     const functional_graph<V, C, EF>& g
 ) {
     return e.target;
@@ -89,7 +89,7 @@ typename functional_graph<V, C, EF>::vertex_descriptor target(
 
 template<typename V, typename C, typename EF>
 typename functional_graph<V, C, EF>::degree_size_type out_degree(
-    typename functional_graph<V, C, EF>::vertex_descriptor& v,
+    const typename functional_graph<V, C, EF>::vertex_descriptor& v,
     const functional_graph<V, C, EF>& g
 ) {
     typename functional_graph<V, C, EF>::out_edge_iterator itr, end;
@@ -104,7 +104,7 @@ template<typename V, typename C, typename EF>
 std::pair<typename functional_graph<V, C, EF>::in_edge_iterator, 
     typename functional_graph<V, C, EF>::in_edge_iterator>
 in_edges(
-    typename functional_graph<V, C, EF>::vertex_descriptor& v,
+    const typename functional_graph<V, C, EF>::vertex_descriptor& v,
     const functional_graph<V, C, EF>& g
 ) {
     auto l = g.pred(v);
@@ -114,7 +114,7 @@ in_edges(
 
 template<typename V, typename C, typename EF>
 typename functional_graph<V, C, EF>::degree_size_type in_degree(
-    typename functional_graph<V, C, EF>::vertex_descriptor& v,
+    const typename functional_graph<V, C, EF>::vertex_descriptor& v,
     const functional_graph<V, C, EF>& g
 ) {
     typename functional_graph<V, C, EF>::in_edge_iterator itr, end;
@@ -127,7 +127,7 @@ typename functional_graph<V, C, EF>::degree_size_type in_degree(
 
 template<typename V, typename C, typename EF>
 typename functional_graph<V, C, EF>::degree_size_type degree(
-    typename functional_graph<V, C, EF>::vertex_descriptor& v,
+    const typename functional_graph<V, C, EF>::vertex_descriptor& v,
     const functional_graph<V, C, EF>& g
 ) {
     return in_degree(v, g) + out_degree(v, g);
