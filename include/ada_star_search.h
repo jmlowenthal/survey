@@ -1,9 +1,7 @@
 #ifndef ADA_STAR_SEARCH_H
 #define ADA_STAR_SEARCH_H
 
-#if (BOOST_PARAMETER_MAX_ARITY < 20)
-#define BOOST_PARAMETER_MAX_ARITY 20
-#endif
+#define BOOST_PARAMETER_MAX_ARITY 12
 
 #include <boost/assert.hpp>
 #include <boost/concept_check.hpp>

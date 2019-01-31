@@ -5,7 +5,7 @@
 #define ACS_RESOLUTION float
 #endif
 
-#define BOOST_PARAMETER_MAX_ARITY 20
+#define BOOST_PARAMETER_MAX_ARITY 12
 
 #include <boost/graph/metric_tsp_approx.hpp>
 #include <boost/property_map/property_map.hpp>
