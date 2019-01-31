@@ -24,6 +24,8 @@
 #include "min_element_by.h"
 #include "nearest_neighbour_metric_tsp_approx.h"
 
+namespace acs {
+
 BOOST_PARAMETER_NAME(graph)
 BOOST_PARAMETER_NAME(weight_map)
 BOOST_PARAMETER_NAME(pheromone_map)
@@ -63,36 +65,6 @@ BOOST_PARAMETER_FUNCTION(
 }
 
 /**
- * Computes an approximate solution to the Traveling Salesperson Problem using
- * the Ant Colony System as described by Marco Dorigo et al, 1997 [1].
- * [1]: http://people.idsia.ch/~luca/acs-ec97.pdf
- */
-BOOST_PARAMETER_FUNCTION(
-    (void),
-    acs_metric_tsp_approx,
-    tag,
-    (required
-        (graph, *)
-        (in_out(visitor), *)
-    )
-    (optional
-        (weight_map, *, (EuclideanDistanceFunctor<graph_type, ACS_RESOLUTION>(graph)))
-        (num_ants, (const int), 100)
-        (iterations, (const int), 100)
-        (beta, (const float), 2.0f)
-        (q0, (const float), 0.9f)
-        (p, (const float), 0.1f)
-        (a, (const float), 0.1f)
-        (tau_zero, (const float), acs_nn_heuristic(graph, weight_map))
-    )
-) {
-    typedef typename boost::graph_traits<graph_type>::vertex_descriptor V;
-    std::map<std::pair<V, V>, float> pmap;
-    acs_metric_tsp_approx_iterate(graph, pmap, visitor, weight_map, num_ants,
-        iterations, beta, q0, p, a, tau_zero);
-}
-
-/**
  * Finds the most probable next node to visit for the given ant, as described by
  * Marco Dorigo et al, 1997 [1]. This function will also update `probs` to be a
  * map from vertices to their probabilities.
@@ -114,10 +86,12 @@ inline typename boost::graph_traits<Graph>::vertex_descriptor acs_find_best(
     typedef typename graph_traits<Graph>::vertex_descriptor V;
     typedef typename graph_traits<Graph>::vertex_iterator VItr;
 
+    std::set<V> visited(ant.begin(), ant.end());
+
     V best = current;
     VItr j, end;
     for (tie(j, end) = vertices(graph); j != end; ++j) {
-        if (std::find(ant.begin(), ant.end(), *j) != ant.end()) {
+        if (visited.count(*j) > 0) {
             continue;
         }
         std::pair<V, V> edge(current, *j);
@@ -335,6 +309,38 @@ BOOST_PARAMETER_FUNCTION(
     for (V v : best_tour) {
         visitor.visit_vertex(v, graph);
     }
+
+}
+
+/**
+ * Computes an approximate solution to the Traveling Salesperson Problem using
+ * the Ant Colony System as described by Marco Dorigo et al, 1997 [1].
+ * [1]: http://people.idsia.ch/~luca/acs-ec97.pdf
+ */
+BOOST_PARAMETER_FUNCTION(
+    (void),
+    acs_metric_tsp_approx,
+    tag,
+    (required
+        (graph, *)
+        (in_out(visitor), *)
+    )
+    (optional
+        (weight_map, *, (EuclideanDistanceFunctor<graph_type, ACS_RESOLUTION>(graph)))
+        (num_ants, (const int), 100)
+        (iterations, (const int), 100)
+        (beta, (const float), 2.0f)
+        (q0, (const float), 0.9f)
+        (p, (const float), 0.1f)
+        (a, (const float), 0.1f)
+        (tau_zero, (const float), acs_nn_heuristic(graph, weight_map))
+    )
+) {
+    typedef typename boost::graph_traits<graph_type>::vertex_descriptor V;
+    std::map<std::pair<V, V>, float> pmap;
+    acs_metric_tsp_approx_iterate(graph, pmap, visitor, weight_map, num_ants,
+        iterations, beta, q0, p, a, tau_zero);
+}
 
 }
 

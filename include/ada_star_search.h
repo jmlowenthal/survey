@@ -30,6 +30,8 @@
 #include "map_property_map.h"
 #include "min_element_by.h"
 
+namespace ada_star {
+
 BOOST_PARAMETER_NAME(graph)
 BOOST_PARAMETER_NAME(start)
 BOOST_PARAMETER_NAME(goal)
@@ -43,7 +45,6 @@ BOOST_PARAMETER_NAME(suboptimality)
 BOOST_PARAMETER_NAME(weight_map)
 BOOST_PARAMETER_NAME(heuristic)
 BOOST_PARAMETER_NAME(visited)
-
 
 #define V_TYPE(G) typename boost::graph_traits<G>::vertex_descriptor
 #define E_TYPE(G) typename boost::graph_traits<G>::edge_descriptor
@@ -80,26 +81,6 @@ inline map_property_map<V, float> make_rhs(V start, V goal) {
     return s;
 }
 
-template<typename V, typename GMap, typename RhsMap, typename Heuristic>
-inline boost::shared_ptr<boost::heap::fibonacci_heap<K_TYPE(V), boost::heap::compare<std::greater<K_TYPE(V)>>>> make_open_set(
-    GMap& g,
-    RhsMap& rhs,
-    Heuristic heuristic,
-    const V goal,
-    const V start,
-    const float suboptimality
-) {
-    using namespace boost;
-    using namespace boost::heap;
-    typedef fibonacci_heap<K_TYPE(V), compare<std::greater<K_TYPE(V)>>> heap;
-    shared_ptr<heap> q(new heap());
-    q->push({
-        ada_key(g, rhs, heuristic, goal, start, suboptimality),
-        goal
-    });
-    return q;
-}
-
 template<typename V>
 inline map_property_map<V, bool> make_visited(V start, V goal) {
     map_property_map<V, bool> m(false);
@@ -127,6 +108,26 @@ inline std::pair<float, float> ada_key(
     else {
         return { get(g, s) + get(heuristic, edge), get(g, s) };
     }
+}
+
+template<typename V, typename GMap, typename RhsMap, typename Heuristic>
+inline boost::shared_ptr<boost::heap::fibonacci_heap<K_TYPE(V), boost::heap::compare<std::greater<K_TYPE(V)>>>> make_open_set(
+    GMap& g,
+    RhsMap& rhs,
+    Heuristic heuristic,
+    const V goal,
+    const V start,
+    const float suboptimality
+) {
+    using namespace boost;
+    using namespace boost::heap;
+    typedef fibonacci_heap<K_TYPE(V), compare<std::greater<K_TYPE(V)>>> heap;
+    shared_ptr<heap> q(new heap());
+    q->push({
+        ada_key(g, rhs, heuristic, goal, start, suboptimality),
+        goal
+    });
+    return q;
 }
 
 template<typename G, typename GMap, typename RhsMap, typename WeightMap,
@@ -400,7 +401,8 @@ inline V_TYPE(G) ada_star_next_step(
         end,
         [&graph, &g, &weight_map, &current](E e) {
             V v = target(e, graph);
-            float w = get(weight_map, { current, v });
+            std::pair<V, V> pair = { current, v };
+            float w = get(weight_map, pair);
             float gv = get(g, v);
             return w + gv;
         }
@@ -423,6 +425,8 @@ inline V_TYPE(G) ada_star_next_step(
         EuclideanDistanceFunctor<G, float>(graph),
         g
     );
+}
+
 }
 
 #endif
