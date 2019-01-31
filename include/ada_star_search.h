@@ -63,7 +63,20 @@ struct edge_descriptor
 };
 #define E_PTYPE(G) edge_descriptor<tag::G::_>
 
-#define K_TYPE(V) std::pair<std::pair<float, float>, V>
+template<typename Key, typename Val>
+struct key_value_pair {
+    Key key;
+    Val val;
+};
+template<typename Key, typename Val>
+bool operator<(const key_value_pair<Key, Val>& a, const key_value_pair<Key, Val>& b) {
+    return a.key < b.key;
+}
+template<typename Key, typename Val>
+bool operator>(const key_value_pair<Key, Val>& a, const key_value_pair<Key, Val>& b) {
+    return a.key > b.key;
+}
+#define K_TYPE(V) key_value_pair<std::pair<float, float>, V>
 
 template<typename V>
 inline map_property_map<V, float> make_g(V start, V goal) {
