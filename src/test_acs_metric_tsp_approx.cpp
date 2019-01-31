@@ -5,6 +5,7 @@
 #include <bits/stl_iterator.h>
 
 using namespace boost;
+using namespace acs;
 typedef simple_point<float> pos;
 typedef adjacency_list<vecS, vecS, directedS, pos> G;
 typedef graph_traits<G>::vertex_descriptor V;

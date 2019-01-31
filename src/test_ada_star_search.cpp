@@ -10,6 +10,7 @@
 #include <cmath>
 
 using namespace boost;
+using namespace ada_star;
 typedef simple_point<float> pos;
 typedef adjacency_list<vecS, vecS, bidirectionalS, pos> G;
 typedef graph_traits<G>::vertex_descriptor V;
