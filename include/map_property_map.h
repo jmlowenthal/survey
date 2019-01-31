@@ -5,7 +5,7 @@
 #include <boost/optional.hpp>
 #include <boost/property_map/property_map.hpp>
 #include <boost/smart_ptr/shared_ptr.hpp>
-#include <map>
+#include <unordered_map>
 #include <memory>
 
 template<typename Key, typename Value>
@@ -13,17 +13,17 @@ class map_property_map
         : public boost::put_get_helper<Value&, map_property_map<Key, Value>> {
 private:
 
-    const boost::shared_ptr<std::map<Key, Value>> _map;
+    const boost::shared_ptr<std::unordered_map<Key, Value>> _map;
     const boost::optional<Value> _default;
 
 public:
 
     map_property_map(boost::optional<Value> def = boost::optional<Value>())
-        : _map(new std::map<Key, Value>), _default(def) {};
+        : _map(new std::unordered_map<Key, Value>()), _default(def) {};
     map_property_map(
             std::map<Key, Value>& map, 
             boost::optional<Value> def = boost::optional<Value>())
-        : _map(new std::map<Key, Value>(map)), _default(def) {};
+        : _map(new std::unordered_map<Key, Value>(map)), _default(def) {};
 
     typedef Key key_type;
     typedef Value value_type;
