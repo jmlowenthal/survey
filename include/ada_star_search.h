@@ -1,7 +1,9 @@
 #ifndef ADA_STAR_SEARCH_H
 #define ADA_STAR_SEARCH_H
 
+#if (BOOST_PARAMETER_MAX_ARITY < 20)
 #define BOOST_PARAMETER_MAX_ARITY 20
+#endif
 
 #include <boost/assert.hpp>
 #include <boost/concept_check.hpp>
@@ -20,9 +22,8 @@
 #include <algorithm>
 #include <cmath>
 #include <functional>
-#include <map>
 #include <queue>
-#include <set>
+#include <unordered_set>
 #include <utility>
 #include <vector>
 
@@ -152,8 +153,8 @@ inline void ada_update_state(
     const RhsMap& rhs,
     WeightMap& weight_map,
     OpenSet open_set,
-    std::set<V_TYPE(G)>& closed_set,
-    std::set<V_TYPE(G)>& incons_set,
+    std::unordered_set<V_TYPE(G)>& closed_set,
+    std::unordered_set<V_TYPE(G)>& incons_set,
     const V_TYPE(G) start,
     const V_TYPE(G) goal,
     Heuristic heuristic,
@@ -187,7 +188,7 @@ inline void ada_update_state(
 
     // Remove s from open_set
     for (typename OpenSet::element_type::iterator itr = open_set->begin(); itr != open_set->end(); ++itr) {
-        if (itr->second == s) {
+        if (itr->val == s) {
             open_set->erase(OpenSet::element_type::s_handle_from_iterator(itr));
             break;
         }
@@ -213,8 +214,8 @@ inline void ada_compute_or_improve_path(
     GMap& g,
     RhsMap& rhs,
     OpenSet open_set,
-    std::set<V_TYPE(G)>& closed_set,
-    std::set<V_TYPE(G)>& incons_set,
+    std::unordered_set<V_TYPE(G)>& closed_set,
+    std::unordered_set<V_TYPE(G)>& incons_set,
     const V_TYPE(G) start,
     const V_TYPE(G) goal,
     Heuristic heuristic,
@@ -231,12 +232,12 @@ inline void ada_compute_or_improve_path(
 
     while (
         !open_set->empty() && (
-            open_set->top().first < key_start
+            open_set->top().key < key_start
             || get(rhs, start) != get(g, start)
         )
     ) {
         // Pop s from the min-heap
-        V s = open_set->top().second;
+        V s = open_set->top().val;
         open_set->pop();
 
         bool update_s = false;
@@ -313,7 +314,6 @@ BOOST_PARAMETER_FUNCTION(
     using namespace boost::heap;
 
     BOOST_CONCEPT_ASSERT((BidirectionalGraphConcept<graph_type>));
-    BOOST_CONCEPT_ASSERT((VertexListGraphConcept<graph_type>));
     BOOST_CONCEPT_ASSERT((Sequence<updates_type>));
     BOOST_CONCEPT_ASSERT((ReadablePropertyMapConcept<heuristic_type, std::pair<V_TYPE(graph_type), V_TYPE(graph_type)>>));
     BOOST_CONCEPT_ASSERT((ReadablePropertyMapConcept<weight_map_type, std::pair<V_TYPE(graph_type), V_TYPE(graph_type)>>));
@@ -326,8 +326,8 @@ BOOST_PARAMETER_FUNCTION(
     typedef E_TYPE(graph_type) E;
     typedef typename graph_traits<graph_type>::vertex_iterator VItr;
 
-    std::set<V> incons_set;
-    std::set<V> closed_set;
+    std::unordered_set<V> incons_set;
+    std::unordered_set<V> closed_set;
     
     // Update priorities
     std::vector<typename open_set_type::element_type::iterator> itrs;
@@ -338,8 +338,8 @@ BOOST_PARAMETER_FUNCTION(
         open_set->update(
             open_set_type::element_type::s_handle_from_iterator(itr),
             {
-                ada_key(g, rhs, heuristic, itr->second, start, suboptimality),
-                itr->second
+                ada_key(g, rhs, heuristic, itr->val, start, suboptimality),
+                itr->val
             }
         );
     }
