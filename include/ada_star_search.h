@@ -12,10 +12,12 @@
 #include <boost/heap/heap_concepts.hpp>
 #include <boost/heap/policies.hpp>
 #include <boost/mpl/assert.hpp>
+#include <boost/mpl/or.hpp>
 #include <boost/parameter.hpp>
 #include <boost/property_map/property_map.hpp>
 #include <boost/property_map/property_map.hpp>
 #include <boost/shared_ptr.hpp>
+#include <boost/type_traits/is_same.hpp>
 
 #include <algorithm>
 #include <cmath>
@@ -34,6 +36,7 @@ namespace ada_star {
 BOOST_PARAMETER_NAME(graph)
 BOOST_PARAMETER_NAME(start)
 BOOST_PARAMETER_NAME(goal)
+BOOST_PARAMETER_NAME(goals)
 BOOST_PARAMETER_NAME(updates)
 BOOST_PARAMETER_NAME(g)
 BOOST_PARAMETER_NAME(rhs)
@@ -78,7 +81,7 @@ bool operator>(const key_value_pair<Key, Val>& a, const key_value_pair<Key, Val>
 #define K_TYPE(V) key_value_pair<std::pair<float, float>, V>
 
 template<typename V>
-inline map_property_map<V, float> make_g(V start, V goal) {
+inline map_property_map<V, float> make_g(V start, const V goal) {
     map_property_map<V, float> s(INFINITY);
     put(s, start, INFINITY);
     put(s, goal, INFINITY);
@@ -86,7 +89,17 @@ inline map_property_map<V, float> make_g(V start, V goal) {
 }
 
 template<typename V>
-inline map_property_map<V, float> make_rhs(V start, V goal) {
+inline map_property_map<V, float> make_g(V start, const std::vector<V>& goals) {
+    map_property_map<V, float> s(INFINITY);
+    put(s, start, INFINITY);
+    for (V goal : goals) {
+        put(s, goal, INFINITY);
+    }
+    return s;
+}
+
+template<typename V>
+inline map_property_map<V, float> make_rhs(V start, const V goal) {
     map_property_map<V, float> s(INFINITY);
     put(s, start, INFINITY);
     put(s, goal, 0);
@@ -94,10 +107,30 @@ inline map_property_map<V, float> make_rhs(V start, V goal) {
 }
 
 template<typename V>
-inline map_property_map<V, bool> make_visited(V start, V goal) {
+inline map_property_map<V, float> make_rhs(V start, const std::vector<V>& goals) {
+    map_property_map<V, float> s(INFINITY);
+    put(s, start, INFINITY);
+    for (V goal : goals) {
+        put(s, goal, 0);
+    }
+    return s;
+}
+
+template<typename V>
+inline map_property_map<V, bool> make_visited(V start, const V goal) {
     map_property_map<V, bool> m(false);
     put(m, start, true);
     put(m, goal, true);
+    return m;
+}
+
+template<typename V>
+inline map_property_map<V, bool> make_visited(V start, const std::vector<V>& goals) {
+    map_property_map<V, bool> m(false);
+    put(m, start, true);
+    for (V goal : goals) {
+        put(m, goal, true);
+    }
     return m;
 }
 
@@ -127,7 +160,7 @@ inline boost::shared_ptr<boost::heap::fibonacci_heap<K_TYPE(V), boost::heap::com
     GMap& g,
     RhsMap& rhs,
     Heuristic heuristic,
-    const V goal,
+    const V& goal,
     const V start,
     const float suboptimality
 ) {
@@ -139,6 +172,28 @@ inline boost::shared_ptr<boost::heap::fibonacci_heap<K_TYPE(V), boost::heap::com
         ada_key(g, rhs, heuristic, goal, start, suboptimality),
         goal
     });
+    return q;
+}
+
+template<typename V, typename GMap, typename RhsMap, typename Heuristic>
+inline boost::shared_ptr<boost::heap::fibonacci_heap<K_TYPE(V), boost::heap::compare<std::greater<K_TYPE(V)>>>> make_open_set(
+    GMap& g,
+    RhsMap& rhs,
+    Heuristic heuristic,
+    const std::vector<V>& goals,
+    const V start,
+    const float suboptimality
+) {
+    using namespace boost;
+    using namespace boost::heap;
+    typedef fibonacci_heap<K_TYPE(V), compare<std::greater<K_TYPE(V)>>> heap;
+    shared_ptr<heap> q(new heap());
+    for (V goal : goals) {
+        q->push({
+            ada_key(g, rhs, heuristic, goal, start, suboptimality),
+            goal
+        });
+    }
     return q;
 }
 
@@ -154,7 +209,7 @@ inline void ada_update_state(
     std::unordered_set<V_TYPE(G)>& closed_set,
     std::unordered_set<V_TYPE(G)>& incons_set,
     const V_TYPE(G) start,
-    const V_TYPE(G) goal,
+    const std::vector<V_TYPE(G)> goals,
     Heuristic heuristic,
     const float suboptimality,
     VisitedMap& visited
@@ -169,7 +224,7 @@ inline void ada_update_state(
     }
 
     // If s != goal, update rhs
-    if (s != goal) {
+    if (std::count(goals.begin(), goals.end(), s)) {
         float bd = INFINITY;
         typedef typename graph_traits<G>::out_edge_iterator EItr;
         EItr i, end;
@@ -215,7 +270,7 @@ inline void ada_compute_or_improve_path(
     std::unordered_set<V_TYPE(G)>& closed_set,
     std::unordered_set<V_TYPE(G)>& incons_set,
     const V_TYPE(G) start,
-    const V_TYPE(G) goal,
+    const std::vector<V_TYPE(G)>& goals,
     Heuristic heuristic,
     const float suboptimality,
     const WeightMap& weight_map,
@@ -261,7 +316,7 @@ inline void ada_compute_or_improve_path(
                 closed_set,
                 incons_set,
                 start,
-                goal,
+                goals,
                 heuristic,
                 suboptimality,
                 visited
@@ -278,7 +333,7 @@ inline void ada_compute_or_improve_path(
                 closed_set,
                 incons_set,
                 start,
-                goal,
+                goals,
                 heuristic,
                 suboptimality,
                 visited
@@ -289,22 +344,22 @@ inline void ada_compute_or_improve_path(
 
 BOOST_PARAMETER_FUNCTION(
     (void),
-    ada_star_search,
+    ada_star_multi_search,
     tag,
     (required
         (graph, *)
         (start, (V_PTYPE(graph)))
-        (goal,  (V_PTYPE(graph)))
+        (goals, (std::vector<V_PTYPE(graph)>))
     )
     (optional
         (heuristic, *, (EuclideanDistanceFunctor<graph_type, float>(graph)))
         (weight_map, *, (EuclideanDistanceFunctor<graph_type, float>(graph)))
         (updates, (std::vector<E_PTYPE(graph)>), std::vector<E_TYPE(graph_type)>())
         (suboptimality, (const float), 1.0f)
-        (in_out(g), *, make_g<V_TYPE(graph_type)>(start, goal))
-        (in_out(rhs), *, make_rhs<V_TYPE(graph_type)>(start, goal))
-        (in_out(open_set), *, make_open_set(g, rhs, heuristic, goal, start, suboptimality))
-        (in_out(visited), *, make_visited<V_TYPE(graph_type)>(start, goal))
+        (in_out(g), *, make_g<V_TYPE(graph_type)>(start, goals))
+        (in_out(rhs), *, make_rhs<V_TYPE(graph_type)>(start, goals))
+        (in_out(open_set), *, make_open_set(g, rhs, heuristic, goals, start, suboptimality))
+        (in_out(visited), *, make_visited<V_TYPE(graph_type)>(start, goals))
     )
 ) {
 
@@ -350,7 +405,7 @@ BOOST_PARAMETER_FUNCTION(
         closed_set,
         incons_set,
         start,
-        goal,
+        goals,
         heuristic,
         suboptimality,
         weight_map,
@@ -369,7 +424,7 @@ BOOST_PARAMETER_FUNCTION(
             closed_set,
             incons_set,
             start,
-            goal,
+            goals,
             heuristic,
             suboptimality,
             visited
@@ -384,6 +439,41 @@ BOOST_PARAMETER_FUNCTION(
         });
     }
 
+}
+
+BOOST_PARAMETER_FUNCTION(
+    (void),
+    ada_star_search,
+    tag,
+    (required
+        (graph, *)
+        (start, (V_PTYPE(graph)))
+        (goal, (V_PTYPE(graph)))
+    )
+    (optional
+        (heuristic, *, (EuclideanDistanceFunctor<graph_type, float>(graph)))
+        (weight_map, *, (EuclideanDistanceFunctor<graph_type, float>(graph)))
+        (updates, (std::vector<E_PTYPE(graph)>), std::vector<E_TYPE(graph_type)>())
+        (suboptimality, (const float), 1.0f)
+        (in_out(g), *, make_g<V_TYPE(graph_type)>(start, goal))
+        (in_out(rhs), *, make_rhs<V_TYPE(graph_type)>(start, goal))
+        (in_out(open_set), *, make_open_set(g, rhs, heuristic, goal, start, suboptimality))
+        (in_out(visited), *, make_visited<V_TYPE(graph_type)>(start, goal))
+    )
+) {
+    ada_star_multi_search(
+        graph,
+        start,
+        std::vector<V_TYPE(graph_type)>{ goal },
+        heuristic,
+        weight_map,
+        updates,
+        suboptimality,
+        g,
+        rhs,
+        open_set,
+        visited
+    );
 }
 
 template<typename G, typename WeightMap, typename GMap>
