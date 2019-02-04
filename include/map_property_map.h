@@ -39,6 +39,14 @@ public:
         return r;
     }
 
+    typename std::unordered_map<Key, Value>::iterator begin() {
+        return (*_map).begin();
+    }
+
+    typename std::unordered_map<Key, Value>::iterator end() {
+        return (*_map).end();
+    }
+
 };
 
 #endif
