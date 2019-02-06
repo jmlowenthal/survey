@@ -224,7 +224,7 @@ inline void ada_update_state(
     }
 
     // If s != goal, update rhs
-    if (std::count(goals.begin(), goals.end(), s)) {
+    if (std::count(goals.begin(), goals.end(), s) == 0) {
         float bd = INFINITY;
         typedef typename graph_traits<G>::out_edge_iterator EItr;
         EItr i, end;
@@ -280,14 +280,9 @@ inline void ada_compute_or_improve_path(
     typedef V_TYPE(G) V;
     typedef typename graph_traits<G>::vertex_iterator VItr;
 
-    std::pair<float, float> key_start =
-        ada_key(g, rhs, heuristic, start, start, suboptimality);
-
     while (
-        !open_set->empty() && (
-            open_set->top().key < key_start
+        (!open_set->empty() && open_set->top().key < ada_key(g, rhs, heuristic, start, start, suboptimality))
             || get(rhs, start) != get(g, start)
-        )
     ) {
         // Pop s from the min-heap
         V s = open_set->top().val;
