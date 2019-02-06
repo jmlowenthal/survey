@@ -38,6 +38,7 @@ BOOST_PARAMETER_NAME(q0)
 BOOST_PARAMETER_NAME(p)
 BOOST_PARAMETER_NAME(a)
 BOOST_PARAMETER_NAME(tau_zero)
+BOOST_PARAMETER_NAME(sop)
 
 /**
  * Computes the Nearest-Neighbour heuristic for tau-zero, as described by Marco
@@ -79,12 +80,14 @@ inline typename boost::graph_traits<Graph>::vertex_descriptor acs_find_best(
     PMap& pheromone_map,
     std::map<typename boost::graph_traits<Graph>::vertex_descriptor, float>& probs,
     float& normalising,
-    const float beta
+    const float beta,
+    bool sop
 ) {
     using namespace boost;
 
     typedef typename graph_traits<Graph>::vertex_descriptor V;
     typedef typename graph_traits<Graph>::vertex_iterator VItr;
+    typedef typename graph_traits<Graph>::in_edge_iterator IEItr;
 
     std::set<V> visited(ant.begin(), ant.end());
 
@@ -93,6 +96,19 @@ inline typename boost::graph_traits<Graph>::vertex_descriptor acs_find_best(
     for (tie(j, end) = vertices(graph); j != end; ++j) {
         if (visited.count(*j) > 0) {
             continue;
+        }
+        if (sop) {
+            bool out_of_order = false;
+            IEItr e, edge_end;
+            for (tie(e, edge_end) = in_edges((V)*j, graph); e != edge_end; ++e) {
+                if (visited.count(source(*e, graph)) == 0) {
+                    out_of_order = true;
+                    break;
+                }
+            }
+            if (out_of_order) {
+                continue;
+            }
         }
         std::pair<V, V> edge(current, *j);
         float nu = 1.0f / weight_map[edge];
@@ -189,6 +205,19 @@ inline void acs_global_update(
     }
 }
 
+template<typename G>
+std::vector<typename boost::graph_traits<G>::vertex_descriptor> get_starts(bool sop, G graph) {
+    using namespace boost;
+    std::vector<typename boost::graph_traits<G>::vertex_descriptor> result;
+    typename graph_traits<G>::vertex_iterator itr, end;
+    for (tie(itr, end) = vertices(graph); itr != end; ++itr) {
+        if (!sop || in_degree(*itr, graph) == 0) {
+            result.push_back(*itr);
+        }
+    }
+    return result;
+}
+
 /**
  * Computes an approximate solution to the Traveling Salesperson Problem using
  * the Ant Colony System as described by Marco Dorigo et al, 1997 [1].
@@ -212,12 +241,12 @@ BOOST_PARAMETER_FUNCTION(
         (p, (const float), 0.1f)
         (a, (const float), 0.1f)
         (tau_zero, (const float), acs_nn_heuristic(graph, weight_map))
-        
+        (sop, (const bool), false)
     )
 ) {
     using namespace boost;
 
-    BOOST_CONCEPT_ASSERT((VertexListGraphConcept<graph_type>));
+    BOOST_CONCEPT_ASSERT((BidirectionalGraphConcept<graph_type>));
     // BOOST_CONCEPT_ASSERT((TSPVertexVisitorConcept<visitor_type, graph_type>));
 
     typedef typename graph_traits<graph_type>::vertex_descriptor V;
@@ -226,6 +255,8 @@ BOOST_PARAMETER_FUNCTION(
     const int num_points = num_vertices(graph);
 
     random::mt11213b generator;
+    std::vector<V> starting_candidates = get_starts(sop, graph);
+    random::uniform_int_distribution dist(0, (int)starting_candidates.size() - 1);
 
     std::vector<V> best_tour;
 
@@ -234,7 +265,7 @@ BOOST_PARAMETER_FUNCTION(
         std::vector<std::vector<V>> ants(num_ants);
         for (int i = 0; i < num_ants; ++i) {
             ants[i].reserve(num_points);
-            ants[i].push_back(random_vertex(graph, generator));
+            ants[i].push_back(starting_candidates[dist(generator)]);
         }
         for (int step = 0; step < num_points - 1; ++step) {
             for (int i = 0; i < num_ants; ++i) {
@@ -252,7 +283,8 @@ BOOST_PARAMETER_FUNCTION(
                     pheromone_map,
                     probs,
                     normalising,
-                    beta
+                    beta,
+                    sop
                 );
 
                 // State transition rule
@@ -334,12 +366,13 @@ BOOST_PARAMETER_FUNCTION(
         (p, (const float), 0.1f)
         (a, (const float), 0.1f)
         (tau_zero, (const float), acs_nn_heuristic(graph, weight_map))
+        (sop, (const bool), false)
     )
 ) {
     typedef typename boost::graph_traits<graph_type>::vertex_descriptor V;
     std::map<std::pair<V, V>, float> pmap;
     acs_metric_tsp_approx_iterate(graph, pmap, visitor, weight_map, num_ants,
-        iterations, beta, q0, p, a, tau_zero);
+        iterations, beta, q0, p, a, tau_zero, sop);
 }
 
 }
