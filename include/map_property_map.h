@@ -25,6 +25,13 @@ public:
             boost::optional<Value> def = boost::optional<Value>())
         : _map(new std::unordered_map<Key, Value>(map)), _default(def) {};
 
+    map_property_map& operator=(const map_property_map& other) {
+        if (this != &other) {
+            _map = other._map;
+            _default = other._default;
+        }
+    }
+
     typedef Key key_type;
     typedef Value value_type;
     typedef Value& reference;
