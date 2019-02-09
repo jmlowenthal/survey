@@ -13,8 +13,8 @@ class map_property_map
         : public boost::put_get_helper<Value&, map_property_map<Key, Value>> {
 private:
 
-    const boost::shared_ptr<std::unordered_map<Key, Value>> _map;
-    const boost::optional<Value> _default;
+    boost::shared_ptr<std::unordered_map<Key, Value>> _map;
+    boost::optional<Value> _default;
 
 public:
 
@@ -30,6 +30,7 @@ public:
             _map = other._map;
             _default = other._default;
         }
+        return *this;
     }
 
     typedef Key key_type;
