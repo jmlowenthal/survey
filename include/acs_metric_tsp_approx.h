@@ -18,11 +18,14 @@
 #include <utility>
 #include <cmath>
 #include <map>
+#include <boost/container_hash/extensions.hpp>
+#include <bits/functional_hash.h>
 
 #include "EuclideanDistanceFunctor.h"
 #include "tour_distance.h"
 #include "min_element_by.h"
 #include "nearest_neighbour_metric_tsp_approx.h"
+#include "map_property_map.h"
 
 namespace acs {
 
@@ -39,6 +42,7 @@ BOOST_PARAMETER_NAME(p)
 BOOST_PARAMETER_NAME(a)
 BOOST_PARAMETER_NAME(tau_zero)
 BOOST_PARAMETER_NAME(sop)
+BOOST_PARAMETER_NAME(inital_pheromone)
 
 /**
  * Computes the Nearest-Neighbour heuristic for tau-zero, as described by Marco
@@ -119,6 +123,17 @@ inline typename boost::graph_traits<Graph>::vertex_descriptor acs_find_best(
             best = *j;
         }
     }
+
+    if (normalising == 0) {
+        std::vector<V> selection;
+        for (auto itr = probs.begin(); itr != probs.end(); ++itr) {
+            itr->second = 1;
+            selection.push_back(itr->first);
+        }
+        normalising = selection.size();
+        best = selection[rand() % selection.size()];
+    }
+
     return best;
 }
 
@@ -367,13 +382,27 @@ BOOST_PARAMETER_FUNCTION(
         (a, (const float), 0.1f)
         (tau_zero, (const float), acs_nn_heuristic(graph, weight_map))
         (sop, (const bool), false)
+        (inital_pheromone, (const float), 1.0)
     )
 ) {
     typedef typename boost::graph_traits<graph_type>::vertex_descriptor V;
-    std::map<std::pair<V, V>, float> pmap;
+    map_property_map<std::pair<V, V>, float> pmap(inital_pheromone);
     acs_metric_tsp_approx_iterate(graph, pmap, visitor, weight_map, num_ants,
         iterations, beta, q0, p, a, tau_zero, sop);
 }
+
+}
+namespace std {
+
+template<typename A, typename B>
+struct hash<std::pair<A, B>> {
+    size_t operator()(std::pair<A, B> val) const {
+        size_t seed = 0;
+        boost::hash_combine(seed, val.first);
+        boost::hash_combine(seed, val.second);
+        return seed;
+    }
+};
 
 }
 
