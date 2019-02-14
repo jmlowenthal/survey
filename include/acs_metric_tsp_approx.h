@@ -382,7 +382,7 @@ BOOST_PARAMETER_FUNCTION(
         (a, (const float), 0.1f)
         (tau_zero, (const float), acs_nn_heuristic(graph, weight_map))
         (sop, (const bool), false)
-        (inital_pheromone, (const float), 1.0)
+        (inital_pheromone, (const float), 0.0)
     )
 ) {
     typedef typename boost::graph_traits<graph_type>::vertex_descriptor V;
@@ -392,6 +392,7 @@ BOOST_PARAMETER_FUNCTION(
 }
 
 }
+
 namespace std {
 
 template<typename A, typename B>

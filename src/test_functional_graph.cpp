@@ -6,6 +6,7 @@
 #include <boost/tuple/tuple.hpp>
 #include <boost/graph/graph_traits.hpp>
 #include <boost/property_map/function_property_map.hpp>
+#include <boost/container_hash/hash.hpp>
 
 #include <map>
 #include <vector>
@@ -19,6 +20,18 @@
 #include "map_property_map.h"
 
 BOOST_CONCEPT_ASSERT((boost::BidirectionalGraphConcept<functional_graph<float>>));
+
+namespace std {
+template<typename A, typename B>
+struct hash<std::pair<A, B>> {
+    size_t operator()(std::pair<A, B> val) const {
+        size_t seed = 0;
+        boost::hash_combine(seed, val.first);
+        boost::hash_combine(seed, val.second);
+        return seed;
+    }
+};
+}
 
 TEST_CASE("Edge equality") {
     edge<int> a = {1, 2};

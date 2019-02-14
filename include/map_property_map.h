@@ -21,7 +21,7 @@ public:
     map_property_map(boost::optional<Value> def = boost::optional<Value>())
         : _map(new std::unordered_map<Key, Value>()), _default(def) {};
     map_property_map(
-            std::map<Key, Value>& map, 
+            std::unordered_map<Key, Value>& map, 
             boost::optional<Value> def = boost::optional<Value>())
         : _map(new std::unordered_map<Key, Value>(map)), _default(def) {};
 
