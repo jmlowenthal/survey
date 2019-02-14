@@ -240,11 +240,15 @@ inline void ada_update_state(
     }
 
     // Remove s from open_set
-    for (typename OpenSet::element_type::iterator itr = open_set->begin(); itr != open_set->end(); ++itr) {
+    typedef typename OpenSet::element_type::iterator Itr;
+    std::vector<Itr> to_remove;
+    for (Itr itr = open_set->begin(); itr != open_set->end(); ++itr) {
         if (itr->val == s) {
-            open_set->erase(OpenSet::element_type::s_handle_from_iterator(itr));
-            break;
+            to_remove.push_back(itr);
         }
+    }
+    for (Itr& itr : to_remove) {
+        open_set->erase(OpenSet::element_type::s_handle_from_iterator(itr));
     }
 
     if (get(g, s) != get(rhs, s)) {
@@ -286,6 +290,7 @@ inline void ada_compute_or_improve_path(
     ) {
         // Pop s from the min-heap
         V s = open_set->top().val;
+        BOOST_ASSERT(open_set->top().key == ada_key(g, rhs, heuristic, s, start, suboptimality));
         open_set->pop();
 
         bool update_s = false;
@@ -378,18 +383,16 @@ BOOST_PARAMETER_FUNCTION(
     std::unordered_set<V> closed_set;
     
     // Update priorities
-    std::vector<typename open_set_type::element_type::iterator> itrs;
+    std::vector<V> vals;
     for (auto itr = open_set->begin(); itr != open_set->end(); ++itr) {
-        itrs.push_back(itr);
+        vals.push_back(itr->val);
     }
-    for (typename open_set_type::element_type::iterator itr : itrs) {
-        open_set->update(
-            open_set_type::element_type::s_handle_from_iterator(itr),
-            {
-                ada_key(g, rhs, heuristic, itr->val, start, suboptimality),
-                itr->val
-            }
-        );
+    open_set->clear();
+    for (V v : vals) {
+        open_set->push({
+            ada_key(g, rhs, heuristic, v, start, suboptimality),
+            v
+        });
     }
 
     ada_compute_or_improve_path(
