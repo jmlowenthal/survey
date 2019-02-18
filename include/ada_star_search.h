@@ -285,8 +285,11 @@ inline void ada_compute_or_improve_path(
     typedef typename graph_traits<G>::vertex_iterator VItr;
 
     while (
-        (!open_set->empty() && open_set->top().key < ada_key(g, rhs, heuristic, start, start, suboptimality))
-            || get(rhs, start) != get(g, start)
+        !this_thread::interruption_requested() && (
+            (!open_set->empty() && open_set->top().key
+                    < ada_key(g, rhs, heuristic, start, start, suboptimality))
+                || get(rhs, start) != get(g, start)
+        )
     ) {
         // Pop s from the min-heap
         V s = open_set->top().val;
