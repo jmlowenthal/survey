@@ -17,6 +17,7 @@
 #include <boost/property_map/property_map.hpp>
 #include <boost/property_map/property_map.hpp>
 #include <boost/shared_ptr.hpp>
+#include <boost/thread/thread.hpp>
 #include <boost/type_traits/is_same.hpp>
 
 #include <algorithm>
