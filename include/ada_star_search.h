@@ -8,7 +8,7 @@
 #include <boost/concept/assert.hpp>
 #include <boost/graph/graph_concepts.hpp>
 #include <boost/graph/graph_traits.hpp>
-#include <boost/headp/binomial_heap.hpp>
+#include <boost/heap/binomial_heap.hpp>
 #include <boost/heap/heap_concepts.hpp>
 #include <boost/heap/policies.hpp>
 #include <boost/mpl/assert.hpp>
