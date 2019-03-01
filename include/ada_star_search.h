@@ -8,7 +8,7 @@
 #include <boost/concept/assert.hpp>
 #include <boost/graph/graph_concepts.hpp>
 #include <boost/graph/graph_traits.hpp>
-#include <boost/heap/fibonacci_heap.hpp>
+#include <boost/headp/binomial_heap.hpp>
 #include <boost/heap/heap_concepts.hpp>
 #include <boost/heap/policies.hpp>
 #include <boost/mpl/assert.hpp>
@@ -157,7 +157,7 @@ inline std::pair<float, float> ada_key(
 }
 
 template<typename V, typename GMap, typename RhsMap, typename Heuristic>
-inline boost::shared_ptr<boost::heap::fibonacci_heap<K_TYPE(V), boost::heap::compare<std::greater<K_TYPE(V)>>>> make_open_set(
+inline boost::shared_ptr<boost::heap::binomial_heap<K_TYPE(V), boost::heap::compare<std::greater<K_TYPE(V)>>>> make_open_set(
     GMap& g,
     RhsMap& rhs,
     Heuristic heuristic,
@@ -167,7 +167,7 @@ inline boost::shared_ptr<boost::heap::fibonacci_heap<K_TYPE(V), boost::heap::com
 ) {
     using namespace boost;
     using namespace boost::heap;
-    typedef fibonacci_heap<K_TYPE(V), compare<std::greater<K_TYPE(V)>>> heap;
+    typedef binomial_heap<K_TYPE(V), compare<std::greater<K_TYPE(V)>>> heap;
     shared_ptr<heap> q(new heap());
     q->push({
         ada_key(g, rhs, heuristic, goal, start, suboptimality),
@@ -177,7 +177,7 @@ inline boost::shared_ptr<boost::heap::fibonacci_heap<K_TYPE(V), boost::heap::com
 }
 
 template<typename V, typename GMap, typename RhsMap, typename Heuristic>
-inline boost::shared_ptr<boost::heap::fibonacci_heap<K_TYPE(V), boost::heap::compare<std::greater<K_TYPE(V)>>>> make_open_set(
+inline boost::shared_ptr<boost::heap::binomial_heap<K_TYPE(V), boost::heap::compare<std::greater<K_TYPE(V)>>>> make_open_set(
     GMap& g,
     RhsMap& rhs,
     Heuristic heuristic,
@@ -187,7 +187,7 @@ inline boost::shared_ptr<boost::heap::fibonacci_heap<K_TYPE(V), boost::heap::com
 ) {
     using namespace boost;
     using namespace boost::heap;
-    typedef fibonacci_heap<K_TYPE(V), compare<std::greater<K_TYPE(V)>>> heap;
+    typedef binomial_heap<K_TYPE(V), compare<std::greater<K_TYPE(V)>>> heap;
     shared_ptr<heap> q(new heap());
     for (V goal : goals) {
         q->push({
