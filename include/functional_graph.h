@@ -49,7 +49,7 @@ struct functional_graph {
                 in_edge_iterator in_begin, in_end;
                 V dst = target(*itr, *this);
                 tie(in_begin, in_end) = in_edges(dst, *this);
-                edge_descriptor edge = {dst, origin};
+                edge_descriptor edge = { origin, dst };
                 BOOST_ASSERT_MSG(
                     std::find(in_begin, in_end, edge) != in_end,
                     "Predecessor function is not inverse of successor"
