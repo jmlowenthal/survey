@@ -294,7 +294,7 @@ inline void ada_compute_or_improve_path(
     ) {
         // Pop s from the min-heap
         V s = open_set->top().val;
-        BOOST_ASSERT(open_set->top().key == ada_key(g, rhs, heuristic, s, start, suboptimality));
+        // BOOST_ASSERT(open_set->top().key == ada_key(g, rhs, heuristic, s, start, suboptimality));
         open_set->pop();
 
         bool update_s = false;
