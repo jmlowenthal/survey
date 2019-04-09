@@ -31,6 +31,7 @@
 #include "EuclideanDistanceFunctor.h"
 #include "map_property_map.h"
 #include "min_element_by.h"
+#include "pair_hash.h"
 
 namespace ada_star {
 
@@ -156,8 +157,40 @@ inline std::pair<float, float> ada_key(
     }
 }
 
+template<typename Key, typename Value>
+class open_set_heap : public boost::heap::binomial_heap<key_value_pair<Key, Value>, boost::heap::compare<std::greater<key_value_pair<Key, Value>>>> {
+private:
+    typedef key_value_pair<Key, Value> T;
+    typedef boost::heap::compare<std::greater<T>> comparator;
+    typedef boost::heap::binomial_heap<T, comparator> super;
+    std::unordered_map<Value, typename super::handle_type> _map;
+public:
+    open_set_heap() : super() {}
+    typename super::handle_type push(T v) {
+        auto handle = super::push(v);
+        _map[v.val] = handle;
+        return handle;
+    }
+    void erase(Value v) {
+        auto handle = _map[v];
+        if (handle.node_) {
+            super::erase(handle);
+        }
+        _map.erase(v);
+    }
+    void clear() {
+        super::clear();
+        _map.clear();
+    }
+    void pop() {
+        auto v = super::top();
+        _map.erase(v.val);
+        super::pop();
+    }
+};
+
 template<typename V, typename GMap, typename RhsMap, typename Heuristic>
-inline boost::shared_ptr<boost::heap::binomial_heap<K_TYPE(V), boost::heap::compare<std::greater<K_TYPE(V)>>>> make_open_set(
+inline boost::shared_ptr<open_set_heap<std::pair<float, float>, V>> make_open_set(
     GMap& g,
     RhsMap& rhs,
     Heuristic heuristic,
@@ -167,7 +200,7 @@ inline boost::shared_ptr<boost::heap::binomial_heap<K_TYPE(V), boost::heap::comp
 ) {
     using namespace boost;
     using namespace boost::heap;
-    typedef binomial_heap<K_TYPE(V), compare<std::greater<K_TYPE(V)>>> heap;
+    typedef open_set_heap<std::pair<float, float>, V> heap;
     shared_ptr<heap> q(new heap());
     q->push({
         ada_key(g, rhs, heuristic, goal, start, suboptimality),
@@ -241,16 +274,7 @@ inline void ada_update_state(
     }
 
     // Remove s from open_set
-    typedef typename OpenSet::element_type::iterator Itr;
-    std::vector<Itr> to_remove;
-    for (Itr itr = open_set->begin(); itr != open_set->end(); ++itr) {
-        if (itr->val == s) {
-            to_remove.push_back(itr);
-        }
-    }
-    for (Itr& itr : to_remove) {
-        open_set->erase(OpenSet::element_type::s_handle_from_iterator(itr));
-    }
+    open_set->erase(s);
 
     if (get(g, s) != get(rhs, s)) {
         if (closed_set.count(s) <= 0) {
@@ -483,7 +507,8 @@ inline V_TYPE(G) ada_star_next_step(
     const G& graph,
     const V_TYPE(G) current,
     const WeightMap& weight_map,
-    GMap& g
+    GMap& g,
+    bool preserve = false
 ) {
     using namespace boost;
     typedef typename graph_traits<G>::vertex_descriptor V;
@@ -494,8 +519,10 @@ inline V_TYPE(G) ada_star_next_step(
     BOOST_CONCEPT_ASSERT((ReadablePropertyMapConcept<WeightMap, std::pair<V_TYPE(G), V_TYPE(G)>>));
     BOOST_CONCEPT_ASSERT((Mutable_LvaluePropertyMapConcept<GMap, V_TYPE(G)>));
 
-    // Don't go back to this vertex unless we get new information (and update g)
-    put(g, current, INFINITY);
+    if (!preserve) {
+        // Don't go back to this vertex unless we get new information (and update g)
+        put(g, current, INFINITY);
+    }
 
     EItr begin, end;
     tie(begin, end) = out_edges(current, graph);
@@ -520,13 +547,15 @@ template<typename G, typename GMap>
 inline V_TYPE(G) ada_star_next_step(
     const G& graph,
     const V_TYPE(G) current,
-    const GMap& g
+    const GMap& g,
+    bool preserve = false
 ) {
     return ada_star_next_step(
         graph,
         current,
         EuclideanDistanceFunctor<G, float>(graph),
-        g
+        g,
+        preserve
     );
 }
 

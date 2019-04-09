@@ -19,13 +19,13 @@
 #include <cmath>
 #include <map>
 #include <boost/container_hash/extensions.hpp>
-#include <bits/functional_hash.h>
 
 #include "EuclideanDistanceFunctor.h"
 #include "tour_distance.h"
 #include "min_element_by.h"
 #include "nearest_neighbour_metric_tsp_approx.h"
 #include "map_property_map.h"
+#include "pair_hash.h"
 
 namespace acs {
 
@@ -390,20 +390,6 @@ BOOST_PARAMETER_FUNCTION(
     acs_metric_tsp_approx_iterate(graph, pmap, visitor, weight_map, num_ants,
         iterations, beta, q0, p, a, tau_zero, sop);
 }
-
-}
-
-namespace std {
-
-template<typename A, typename B>
-struct hash<std::pair<A, B>> {
-    size_t operator()(std::pair<A, B> val) const {
-        size_t seed = 0;
-        boost::hash_combine(seed, val.first);
-        boost::hash_combine(seed, val.second);
-        return seed;
-    }
-};
 
 }
 
