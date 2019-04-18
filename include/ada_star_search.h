@@ -210,7 +210,7 @@ inline boost::shared_ptr<open_set_heap<std::pair<float, float>, V>> make_open_se
 }
 
 template<typename V, typename GMap, typename RhsMap, typename Heuristic>
-inline boost::shared_ptr<boost::heap::binomial_heap<K_TYPE(V), boost::heap::compare<std::greater<K_TYPE(V)>>>> make_open_set(
+inline boost::shared_ptr<open_set_heap<std::pair<float, float>, V>> make_open_set(
     GMap& g,
     RhsMap& rhs,
     Heuristic heuristic,
