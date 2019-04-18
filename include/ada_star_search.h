@@ -220,7 +220,7 @@ inline boost::shared_ptr<open_set_heap<std::pair<float, float>, V>> make_open_se
 ) {
     using namespace boost;
     using namespace boost::heap;
-    typedef binomial_heap<K_TYPE(V), compare<std::greater<K_TYPE(V)>>> heap;
+    typedef open_set_heap<std::pair<float, float>, V> heap;
     shared_ptr<heap> q(new heap());
     for (V goal : goals) {
         q->push({
