@@ -201,18 +201,21 @@ inline void acs_global_update(
     const WMap& weight_map,
     const float a
 ) {
-    using namespace boost;
+	using namespace boost;
 
     typedef typename graph_traits<Graph>::vertex_descriptor V;
     typedef typename graph_traits<Graph>::vertex_iterator VItr;
 
-    VItr i, j, end_i, end_j;
-    for (tie(i, end_i) = vertices(graph); i != end_i; ++i) {
-        for (tie(j, end_j) = vertices(graph); j != end_j; ++j) {
-            std::pair<V, V> edge(*i, *j);
-            pheromone_map[edge] *= (1 - a);
-        }
-    }
+	// Apply first half of global update rule, for all edges.
+	VItr i, j, end_i, end_j;
+	for (tie(i, end_i) = vertices(graph); i != end_i; ++i) {
+		for (tie(j, end_j) = vertices(graph); j != end_j; ++j) {
+			std::pair<V, V> edge(*i, *j);
+			pheromone_map[edge] *= (1 - a);
+		}
+	}
+
+	// Apply second half of global update rule, for edge along the best tour.
     float bonus = a / tour_distance<const WMap, ACS_RESOLUTION, V>(best_tour, weight_map);
     for (int i = 0; i < best_tour.size() - 1; ++i) {
         std::pair<V, V> edge(best_tour[i], best_tour[i + 1]);
